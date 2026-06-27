@@ -5,12 +5,17 @@ from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
-# ================= КОНФИГУРАЦИЯ =================
-TOKEN = "ВАШ_ТОКЕН_ОТ_BOTFATHER"
+from dotenv import load_dotenv
+import os
+from datetime import datetime
+
+# Токен вашего бота (получите у @BotFather)
+load_dotenv()
+TOKEN = os.environ["TG_BOT_TOKEN"]
 
 # ID анимации монетки (можно отправить гифку в @RawDataBot и скопировать file_id)
 # Если оставить None, будет использоваться просто текст
-COIN_ANIMATION_ID = "CgACAgIAAxkBAAEHaJ9nZ8X..." 
+COIN_ANIMATION_ID =os.environ["COIN_ANIMATION_ID"]
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -56,7 +61,7 @@ async def flip_coin(message: types.Message):
             pass  # Если анимация невалидна, просто продолжаем
 
     # Генерация результата
-    result = random.choice(["Орёл 🦅", "Решка 🔢"])
+    result = random.choice(["Орёл 🦅", "Решка 🪙"])
     
     # Отправляем итоговый результат
     await message.answer(
