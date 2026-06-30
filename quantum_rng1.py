@@ -4,8 +4,16 @@ import random
 from collections import deque
 from typing import Optional
 import aiohttp
+import secrets
+import hashlib
 
 logger = logging.getLogger(__name__)
+
+ANU_API_URL = "https://qrng.anu.edu.au/API/jsonI.php"
+
+BITS_SIZE = 1024
+POOL_SIZE = 500
+REFIL_TRSLD = 100
 
 class QuantumRNG:
     """
@@ -13,10 +21,9 @@ class QuantumRNG:
     Использует истинную квантовую случайность (вакуумные флуктуации).
     Работает из РФ/РБ без блокировок и специальных SDK.
     """
-
-    ANU_API_URL = "https://qrng.anu.edu.au/API/jsonI.php"
-
-    def __init__(self, pool_size: int = 500, refill_threshold: int = 100):
+    
+    def __init__(self, 
+        pool_size: int = POOL_SIZE, refill_threshold: int = REFIL_TRSLD):
         self._pool: deque[int] = deque(maxlen=pool_size)
         self._pool_size = pool_size
         self._refill_threshold = refill_threshold
@@ -43,7 +50,6 @@ class QuantumRNG:
         async with self._lock:
             if not self._pool:
                 logger.warning("[ANU QRNG] Пул пуст! Fallback на secrets...")
-                import secrets
                 return secrets.randbelow(2)
             return self._pool.popleft()
 
@@ -60,11 +66,11 @@ class QuantumRNG:
                 return
 
             # ANU позволяет запрашивать до 1024 чисел за раз
-            request_size = min(bits_needed, 1024)
+            request_size = min(bits_needed, BITS_SIZE)
             logger.info(f"[ANU QRNG] Запрос {request_size} квантовых чисел...")
 
             params = {"length": str(request_size), "type": "uint8"}
-            async with self._session.get(self.ANU_API_URL, params=params, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+            async with self._session.get(ANU_API_URL, params=params, timeout=aiohttp.ClientTimeout(total=10)) as resp:
                 if resp.status != 200:
                     raise RuntimeError(f"API вернул статус {resp.status}")
                 data = await resp.json()
@@ -85,3 +91,23 @@ class QuantumRNG:
             logger.error(f"[ANU QRNG] Ошибка: {e}", exc_info=True)
         finally:
             self._is_refilling = False
+
+async def get_shared_bit(self, duel_id: str) -> int:
+    """
+    Получить квантовый бит для совместного спора.
+    Один и тот же duel_id всегда возвращает один и тот же бит.
+    """
+    
+    # Детерминированный маппинг duel_id → индекс в пуле
+    # Это гарантирует, что оба участника получат одинаковый результат
+    hash_val = int(hashlib.sha256(duel_id.encode()).hexdigest(), 16)
+    
+    async with self._lock:
+        if not self._pool:
+            return secrets.randbelow(2)
+        
+        index = hash_val % len(self._pool)
+        bit = self._pool[index]
+        # НЕ удаляем бит из пула (popleft), чтобы второй участник получил тот же
+        
+    return bit

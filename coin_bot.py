@@ -3,13 +3,13 @@ import random
 import logging
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 from dotenv import load_dotenv
 import os
 from datetime import datetime
 
 import aiohttp
+import uuid
 
 from quantum_rng1 import QuantumRNG
 
@@ -33,6 +33,8 @@ UNKNOWN_MSG_TEXT = "Не понимаю эту команд.\nНажми «🪙 
 FLIP_COIN_BTN_TEXT = "🪙 Подбросить монету"
 
 COIN_SIDE = ["Орёл 🦅", "Решка 🪙"]
+
+BOT_USERNAME = os.environ["BOT_USERNAME"]
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -98,6 +100,23 @@ async def flip_coin(message: types.Message):
         reply_markup=keyboard
     )
 
+@dp.message(F.text.startswith("/start duel_"))
+async def accept_duel(message: types.Message):
+    """Обработка принятия спора через deep link"""
+    duel_id = message.text.split("_")[1]
+    
+    # Оба участника получают ОДИНАКОВЫЙ бит
+    bit = await qrng.get_shared_bit(duel_id)
+    result = COIN_SIDE[bit]
+    
+    await message.answer(
+        f"⚔️ <b>Квантовый спор решён!</b>\n\n"
+        f"Результат общего измерения: <b>{result}</b>\n\n"
+        f"<i>Этот же результат видит твой оппонент. "
+        f"Квантовая физика не врёт.</i>",
+        parse_mode="HTML"
+    )
+
 @dp.message(Command("qstatus"))
 async def q_status(message: types.Message):
     status = "✅ Норма" if len(qrng._pool) > qrng._refill_threshold else "⚠️ Пополняется"
@@ -108,6 +127,28 @@ async def q_status(message: types.Message):
     )
     logging.info(qstatus_answer)
     await message.answer(qstatus_answer)
+
+@dp.message(Command("duel"))
+async def create_duel(message: types.Message):
+    """Создание квантового спора"""
+    duel_id = uuid.uuid4().hex[:8]
+    
+    keyboard = Inline0KeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(
+            text="🎲 Принять вызов",
+            url=f"https://t.me/{BOT_USERNAME}?start=duel_{duel_id}"
+        )]
+    ])
+    
+    await message.answer(
+        f"⚔️ <b>Квантовый спор создан!</b>\n\n"
+        f"Отправь эту кнопку другу.\n"
+        f"Когда он нажмёт «Принять вызов», вы оба получите "
+        f"результат <i>одного и того же</i> квантового измерения.\n\n"
+        f"<code>ID: {duel_id}</code>",
+        parse_mode="HTML",
+        reply_markup=keyboard
+    )
 
 @dp.message()
 async def unknown_message(message: types.Message):
