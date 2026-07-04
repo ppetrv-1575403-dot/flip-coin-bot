@@ -91,14 +91,14 @@ class QuantumRNG:
             logger.error(f"[ANU QRNG] Ошибка: {e}", exc_info=True)
         finally:
             self._is_refilling = False
-
+            
+            
 async def get_shared_bit(self, duel_id: str) -> int:
     """
     Получить квантовый бит для совместного спора.
     Один и тот же duel_id всегда возвращает один и тот же бит.
     """
-    
-    # Детерминированный маппинг duel_id → индекс в пуле
+    # Детерминированный маппинг duel_id → индекс в пулеm1
     # Это гарантирует, что оба участника получат одинаковый результат
     hash_val = int(hashlib.sha256(duel_id.encode()).hexdigest(), 16)
     
