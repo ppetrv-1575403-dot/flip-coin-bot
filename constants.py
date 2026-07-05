@@ -30,7 +30,7 @@ def get_duel_url(user, duel_id):
 def get_cache_size_status_msg(bits_cache_size):
     return "✅ Норма" if bits_cache_size > qrng._refill_threshold else "⚠️ Пополняется"
 
-def get_flip_answer_msg():
+def get_flip_answer_msg(bit):
     result = COIN_SIDE[bit]
     return f"Результат: <b>{result}</b>"
 
