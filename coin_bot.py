@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import os
 import uuid
 from datetime import datetime
@@ -17,48 +16,34 @@ from dotenv import load_dotenv
 
 from quantum_rng1 import QuantumRNG
 
+from constants import (
+    logger, START_TEXT, UNKNOWN_MSG_TEXT, FLIP_COIN_BTN_TEXT, COIN_SIDE,
+    get_duel_url, get_cache_size_status_msg, get_accept_duel_answer_msg,
+    qstatus_answer, get_duel_answer_msg, get_flip_answer_msg, NO_WEBHOOK_ERR_MSG
+)
+
 # ─────────────────── Конфиг ───────────────────
 load_dotenv()
 
 TOKEN = os.environ["TG_BOT_TOKEN"]
 BOT_USERNAME = os.environ["BOT_USERNAME"]
-COIN_ANIMATION_ID = os.environ.get("COIN_ANIMATION_ID", "")
+COIN_ANIMATION_ID = os.environ.get("COIN_ANIMATION_ID", "None")
 
-# URL, по которому Telegram будет слать обновления.
-# На Replit это: https://<repl-name>.<username>.repl.co/webhook
-# Можно задать вручную через переменную окружения WEBHOOK_URL,
-# либо автоматически через PUBLIC_URL (Replit 2024+).
+# Render автоматически даёт переменную RENDER_EXTERNAL_URL
 BASE_WEBHOOK_URL = os.environ.get(
     "WEBHOOK_URL",
-    os.environ.get("PUBLIC_URL", "https://your-repl-name.your-username.repl.co")
+    os.environ.get("RENDER_EXTERNAL_URL", "")
 )
+
+if not BASE_WEBHOOK_URL:
+    raise RuntimeError(NO_WEBHOOK_ERR_MSG)
+
 WEBHOOK_PATH = "/webhook"
 WEBHOOK_URL = f"{BASE_WEBHOOK_URL.rstrip('/')}{WEBHOOK_PATH}"
 
-# Хост и порт, которые слушает Replit (всегда 0.0.0.0:8080)
+# Render задаёт порт через переменную окружения PORT
 WEBAPP_HOST = "0.0.0.0"
 WEBAPP_PORT = int(os.environ.get("PORT", 8080))
-
-# ─────────────────── Константы ───────────────────
-START_TEXT = (
-    "Привет! Я бот для подбрасывания монетки.\n"
-    "Я работаю с использованием квантовых вычислений — "
-    "реальная связь с вселенной, которая поможет принять решение!\n"
-    "Нажми кнопку ниже или напиши /flip"
-)
-UNKNOWN_MSG_TEXT = (
-    "Не понимаю эту команду.\n"
-    "Нажми «🪙 Подбросить монету» или используй /flip"
-)
-FLIP_COIN_BTN_TEXT = "🪙 Подбросить монету"
-COIN_SIDE = ["Орёл 🦅", "Решка 🪙"]
-
-# ─────────────────── Логирование ───────────────────
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-)
-logger = logging.getLogger(__name__)
 
 # ─────────────────── QRNG ───────────────────
 qrng = QuantumRNG(pool_size=500, refill_threshold=100)
@@ -67,7 +52,6 @@ qrng = QuantumRNG(pool_size=500, refill_threshold=100)
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-# Клавиатура
 keyboard = ReplyKeyboardMarkup(
     keyboard=[[KeyboardButton(text=FLIP_COIN_BTN_TEXT)]],
     resize_keyboard=True,
@@ -95,9 +79,7 @@ async def flip_coin(message: types.Message):
             pass
 
     bit = await qrng.get_bit()
-    result = COIN_SIDE[bit]
-
-    flip_answer = f"Результат: <b>{result}</b>"
+    flip_answer = get_flip_answer_msg(bit)
     logger.info(flip_answer)
     await message.answer(flip_answer, parse_mode="HTML", reply_markup=keyboard)
 
@@ -106,47 +88,31 @@ async def flip_coin(message: types.Message):
 async def accept_duel(message: types.Message):
     duel_id = message.text.split("_")[1]
     bit = await qrng.get_shared_bit(duel_id)
-    result = COIN_SIDE[bit]
-
-    await message.answer(
-        f"⚔️ <b>Квантовый спор решён!</b>\n\n"
-        f"Результат общего измерения: <b>{result}</b>\n\n"
-        f"<i>Этот же результат видит твой оппонент.</i>\n"
-        f"Квантовая физика не врёт.",
-        parse_mode="HTML",
-    )
+    answer_msg = get_accept_duel_answer_msg(bit)
+    await message.answer(answer_msg, parse_mode="HTML")
 
 
 @dp.message(Command("qstatus"))
 async def q_status(message: types.Message):
-    status = "✅ Норма" if len(qrng._pool) > qrng._refill_threshold else "⚠️ Пополняется"
-    qstatus_answer = (
-        f"📊 Статус квантового пула:\n"
-        f"• Битов в запасе: {len(qrng._pool)}\n"
-        f"• Состояние: {status}\n"
-        f"• Провайдер: ANU Quantum Random"
-    )
-    logger.info(qstatus_answer)
-    await message.answer(qstatus_answer)
+    bits_cache_size = len(qrng._pool)
+    status = get_cache_size_status_msg(bits_cache_size)
+    qstatus_answer_msg = qstatus_answer(bits_cache_size, status)
+    logger.info(qstatus_answer_msg)
+    await message.answer(qstatus_answer_msg)
 
 
 @dp.message(Command("duel"))
 async def create_duel(message: types.Message):
     duel_id = uuid.uuid4().hex[:8]
-
     inline_kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(
             text="🎲 Принять вызов",
-            url=f"https://t.me/{BOT_USERNAME}?start=duel_{duel_id}",
+            url=get_duel_url(BOT_USERNAME, duel_id)
         )]
     ])
-
+    duel_answer_msg = get_duel_answer_msg(duel_id)
     await message.answer(
-        f"⚔️ <b>Квантовый спор создан!</b>\n\n"
-        f"Отправь эту кнопку другу.\n"
-        f"Когда он нажмёт «Принять вызов», вы оба получите "
-        f"результат <i>одного и того же</i> квантового измерения.\n\n"
-        f"<code>ID: {duel_id}</code>",
+        duel_answer_msg,
         parse_mode="HTML",
         reply_markup=inline_kb,
     )
@@ -163,8 +129,6 @@ async def unknown_message(message: types.Message):
 async def on_startup(app: web.Application):
     """Вызывается один раз при старте веб-сервера."""
     await qrng.start()
-
-    # Устанавливаем webhook в Telegram
     logger.info(f"Setting webhook → {WEBHOOK_URL}")
     await bot.set_webhook(
         url=WEBHOOK_URL,
@@ -184,7 +148,7 @@ async def on_shutdown(app: web.Application):
 
 
 async def health_check(request: web.Request):
-    """Health-check endpoint — нужен, чтобы Replit видел, что сервер жив."""
+    """Health-check endpoint для Render."""
     return web.Response(text="OK", status=200)
 
 
@@ -192,7 +156,7 @@ def create_app() -> web.Application:
     """Сборка aiohttp-приложения."""
     app = web.Application()
 
-    # Health-check на корневом URL
+    # Health-check на корневом URL (нужен для Render)
     app.router.add_get("/", health_check)
 
     # Lifecycle hooks
@@ -203,7 +167,6 @@ def create_app() -> web.Application:
     request_handler = SimpleRequestHandler(dispatcher=dp, bot=bot)
     request_handler.register(app, path=WEBHOOK_PATH)
 
-    # Автоматически регистрирует /webhook и привязывает shutdown к aiogram
     setup_application_webhook(
         bot=bot,
         dispatcher=dp,
@@ -216,5 +179,5 @@ def create_app() -> web.Application:
 
 if __name__ == "__main__":
     app = create_app()
-    # Replit всегда запускает сервер на 0.0.0.0:8080 (или PORT)
+    # Render задаёт порт через переменную PORT
     web.run_app(app, host=WEBAPP_HOST, port=WEBAPP_PORT)
