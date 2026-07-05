@@ -11,7 +11,7 @@ from aiogram.types import (
     ReplyKeyboardMarkup, KeyboardButton,
     InlineKeyboardMarkup, InlineKeyboardButton,
 )
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application_webhook
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler
 from dotenv import load_dotenv
 
 from quantum_rng1 import QuantumRNG
@@ -29,7 +29,6 @@ TOKEN = os.environ["TG_BOT_TOKEN"]
 BOT_USERNAME = os.environ["BOT_USERNAME"]
 COIN_ANIMATION_ID = os.environ.get("COIN_ANIMATION_ID", "None")
 
-# Render автоматически даёт переменную RENDER_EXTERNAL_URL
 BASE_WEBHOOK_URL = os.environ.get(
     "WEBHOOK_URL",
     os.environ.get("RENDER_EXTERNAL_URL", "")
@@ -41,7 +40,6 @@ if not BASE_WEBHOOK_URL:
 WEBHOOK_PATH = "/webhook"
 WEBHOOK_URL = f"{BASE_WEBHOOK_URL.rstrip('/')}{WEBHOOK_PATH}"
 
-# Render задаёт порт через переменную окружения PORT
 WEBAPP_HOST = "0.0.0.0"
 WEBAPP_PORT = int(os.environ.get("PORT", 8080))
 
@@ -167,17 +165,9 @@ def create_app() -> web.Application:
     request_handler = SimpleRequestHandler(dispatcher=dp, bot=bot)
     request_handler.register(app, path=WEBHOOK_PATH)
 
-    setup_application_webhook(
-        bot=bot,
-        dispatcher=dp,
-        app=app,
-        path=WEBHOOK_PATH,
-    )
-
     return app
 
 
 if __name__ == "__main__":
     app = create_app()
-    # Render задаёт порт через переменную PORT
     web.run_app(app, host=WEBAPP_HOST, port=WEBAPP_PORT)
