@@ -28,8 +28,7 @@ def get_duel_url(user, duel_id):
     return f"https://t.me/{user}?start=duel_{duel_id}"
 
 def get_cache_size_status_msg(bits_cache_size):
-    return "✅ Норма" if. bits_cache_size > qrng._refill_threshold else "⚠️ Пополняется"
-
+    return "✅ Норма" if bits_cache_size > qrng._refill_threshold else "⚠️ Пополняется"
 
 def get_flip_answer_msg():
     result = COIN_SIDE[bit]
