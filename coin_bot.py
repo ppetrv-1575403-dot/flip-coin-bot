@@ -70,7 +70,8 @@ keyboard = ReplyKeyboardMarkup(
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
-    await message.answer(START_TEXT, reply_markup=keyboard)
+    await message.answer(START_TEXT,
+parse_mode="HTML", reply_markup=keyboard)
 
 
 @dp.message(F.text.in_([FLIP_COIN_BTN_TEXT, "/flip"]))
@@ -110,7 +111,7 @@ async def accept_duel(message: types.Message):
 @dp.message(Command("qstatus"))
 async def q_status(message: types.Message):
     bits_cache_size = len(qrng._pool)
-    status = get_cache_size_status_msg(bits_cache_size)
+    status = get_cache_size_status_msg(bits_cache_size, TRESHOLD)
     qstatus_answer_msg = qstatus_answer(bits_cache_size, status)
     logger.info(qstatus_answer_msg)
     await message.answer(qstatus_answer_msg)
