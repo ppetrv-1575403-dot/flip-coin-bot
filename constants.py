@@ -23,7 +23,6 @@ START_TEXT = """
 """
 
 
-
 UNKNOWN_MSG_TEXT = (
     "Не понимаю эту команду.\n"
     "Нажми «🪙 Подбросить монету» или используй /flip"
@@ -61,7 +60,7 @@ def get_accept_duel_answer_msg(bit):
     return (f"⚔️ <b>Квантовый спор решён!</b>\n\n"
         f"Результат общего измерения: <b>{result}</b>\n\n"
         f"<i>Этот же результат видит твой оппонент.</i>\n"
-        f"Квантовая физика не врёт.",)
+        f"Квантовая физика не врёт.")
 
 
 def qstatus_answer(bits_cache_size, status): return (

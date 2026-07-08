@@ -44,6 +44,9 @@ if not BASE_WEBHOOK_URL:
 WEBHOOK_PATH = "/webhook"
 WEBHOOK_URL = f"{BASE_WEBHOOK_URL.rstrip('/')}{WEBHOOK_PATH}"
 
+logger.info(f"WEBHOOK_URL = {WEBHOOK_URL}")
+logger.info(f"BASE_WEBHOOK_URL = {BASE_WEBHOOK_URL}")
+
 WEBAPP_HOST = "0.0.0.0"
 WEBAPP_PORT = int(os.environ.get("PORT", 8080))
 
@@ -140,16 +143,19 @@ async def unknown_message(message: types.Message):
 
 
 async def on_startup(app: web.Application):
-    """Вызывается один раз при старте веб-сервера."""
-    await qrng.start()
-    logger.info(f"Setting webhook → {WEBHOOK_URL}")
-    await bot.set_webhook(
-        url=WEBHOOK_URL,
-        allowed_updates=dp.resolve_used_update_types(),
-        drop_pending_updates=True,
-    )
-    logger.info("Webhook установлен успешно.")
-
+    try:
+        await qrng.start()
+        logger.info(f"Setting webhook → {WEBHOOK_URL}")
+        await bot.set_webhook(
+            url=WEBHOOK_URL,
+            allowed_updates=["message", "callback_query"],
+            drop_pending_updates=True,
+        )
+        logger.info("Webhook установлен успешно.")
+    except Exception as e:
+        logger.error(f"Ошибка при старте: {e}", exc_info=True)
+        # Продолжаем работу даже если QRNG не инициализирован
+        # (fallback на secrets всё равно сработает)
 
 async def on_shutdown(app: web.Application):
     """Корректное завершение."""

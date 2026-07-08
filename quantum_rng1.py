@@ -93,7 +93,7 @@ class QuantumRNG:
             self._is_refilling = False
             
             
-async def get_shared_bit(self, duel_id: str) -> int:
+    async def get_shared_bit(self, duel_id: str) -> int:
     """
     Получить квантовый бит для совместного спора.
     Один и тот же duel_id всегда возвращает один и тот же бит.
