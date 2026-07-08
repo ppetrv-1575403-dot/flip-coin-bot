@@ -23,7 +23,7 @@ from constants import (
     qstatus_answer, get_duel_answer_msg, get_flip_answer_msg, NO_WEBHOOK_ERR_MSG, ad_text
 )
 
-from ad_tools import load_ad_links, calc_user_flip_coins, get_link, show_ad
+from ad_tools import POOL_SIZE, TRESHOLD, load_ad_links, calc_user_flip_coins, get_link, show_ad
 
 # ─────────────────── Конфиг ───────────────────
 #load_dotenv()
