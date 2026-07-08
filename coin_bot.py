@@ -229,8 +229,59 @@ def create_app() -> web.Application:
     
     return app
 
+#if __name__ == "__main__":
+#    print("🏁 Запуск веб-сервера...", flush=True)
+#    print(f"   Host: {WEBAPP_HOST}, Port: {WEBAPP_PORT}", flush=True)
+#    app = create_app()
+#    web.run_app(app, host=WEBAPP_HOST, port=WEBAPP_PORT)
+    
+async def setup_webhook():
+    """Устанавливаем webhook после запуска сервера."""
+    try:
+        print(f"🔄 Установка webhook на {WEBHOOK_URL}...", flush=True)
+        result = await bot.set_webhook(
+            url=WEBHOOK_URL,
+            allowed_updates=["message", "callback_query"],
+            drop_pending_updates=True,
+        )
+        print(f"✅ Webhook установлен: {result}", flush=True)
+    except Exception as e:
+        print(f"❌ Ошибка установки webhook: {e}", flush=True)
+
+async def main():
+    """Главная функция запуска."""
+    print("🏁 Запуск бота...", flush=True)
+    
+    # Инициализируем QRNG
+    try:
+        await qrng.start()
+        print("✅ QRNG инициализирован", flush=True)
+    except Exception as e:
+        print(f"⚠️ QRNG не инициализирован: {e}", flush=True)
+    
+    # Создаём приложение
+    app = web.Application()
+    app.router.add_get("/", health_check)
+    
+    request_handler = SimpleRequestHandler(dispatcher=dp, bot=bot)
+    request_handler.register(app, path=WEBHOOK_PATH)
+    
+    # Запускаем сервер в фоне
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, WEBAPP_HOST, WEBAPP_PORT)
+    await site.start()
+    
+    print(f"✅ Сервер запущен на {WEBAPP_HOST}:{WEBAPP_PORT}", flush=True)
+    
+    # Устанавливаем webhook ПОСЛЕ запуска сервера
+    await setup_webhook()
+    
+    # Держим сервер запущенным
+    await asyncio.Event().wait()
+
 if __name__ == "__main__":
-    print("🏁 Запуск веб-сервера...", flush=True)
-    print(f"   Host: {WEBAPP_HOST}, Port: {WEBAPP_PORT}", flush=True)
-    app = create_app()
-    web.run_app(app, host=WEBAPP_HOST, port=WEBAPP_PORT)
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("🛑 Остановка бота...", flush=True)
