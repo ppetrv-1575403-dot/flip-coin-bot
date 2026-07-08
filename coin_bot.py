@@ -9,9 +9,10 @@ from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.types import (
     ReplyKeyboardMarkup, KeyboardButton,
-    InlineKeyboardMarkup, InlineKeyboardButton,
+    InlineKeyboardMarkup, InlineKeyboardButton
 )
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler
+
 from dotenv import load_dotenv
 
 from quantum_rng1 import QuantumRNG
@@ -19,11 +20,14 @@ from quantum_rng1 import QuantumRNG
 from constants import (
     logger, START_TEXT, UNKNOWN_MSG_TEXT, FLIP_COIN_BTN_TEXT, COIN_SIDE,
     get_duel_url, get_cache_size_status_msg, get_accept_duel_answer_msg,
-    qstatus_answer, get_duel_answer_msg, get_flip_answer_msg, NO_WEBHOOK_ERR_MSG
+    qstatus_answer, get_duel_answer_msg, get_flip_answer_msg, NO_WEBHOOK_ERR_MSG, ad_text
 )
 
+from ad_tools import load_ad_links, calc_user_flip_coins, get_link, show_ad
+
 # ─────────────────── Конфиг ───────────────────
-load_dotenv()
+#load_dotenv()
+load_ad_links()
 
 TOKEN = os.environ["TG_BOT_TOKEN"]
 BOT_USERNAME = os.environ["BOT_USERNAME"]
@@ -43,8 +47,11 @@ WEBHOOK_URL = f"{BASE_WEBHOOK_URL.rstrip('/')}{WEBHOOK_PATH}"
 WEBAPP_HOST = "0.0.0.0"
 WEBAPP_PORT = int(os.environ.get("PORT", 8080))
 
+#AD_LINK_1 = os.environ["AD_LINK_1"]
+load_ad_links()
+
 # ─────────────────── QRNG ───────────────────
-qrng = QuantumRNG(pool_size=500, refill_threshold=100)
+qrng = QuantumRNG(pool_size=POOL_SIZE, refill_threshold=TRESHOLD)
 
 # ─────────────────── Bot / Dispatcher ───────────────────
 bot = Bot(token=TOKEN)
@@ -55,8 +62,8 @@ keyboard = ReplyKeyboardMarkup(
     resize_keyboard=True,
 )
 
-
 # ═══════════════════════ Хэндлеры ═══════════════════════
+
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
@@ -65,6 +72,8 @@ async def cmd_start(message: types.Message):
 
 @dp.message(F.text.in_([FLIP_COIN_BTN_TEXT, "/flip"]))
 async def flip_coin(message: types.Message):
+    user_id = message.from_user.id
+    
     if COIN_ANIMATION_ID and len(COIN_ANIMATION_ID) > 10:
         try:
             anim_msg = await message.answer_animation(
@@ -79,7 +88,12 @@ async def flip_coin(message: types.Message):
     bit = await qrng.get_bit()
     flip_answer = get_flip_answer_msg(bit)
     logger.info(flip_answer)
+    
+    # 2. Отправляем сам результат подбрасывания
     await message.answer(flip_answer, parse_mode="HTML", reply_markup=keyboard)
+
+    # ═══════════════════════ ЛОГИКА РЕКЛАМЫ ═══════════════════════
+    show_ad(user_id)
 
 
 @dp.message(F.text.startswith("/start duel_"))
@@ -123,6 +137,7 @@ async def unknown_message(message: types.Message):
 
 
 # ═══════════════════════ Webhook setup ═══════════════════════
+
 
 async def on_startup(app: web.Application):
     """Вызывается один раз при старте веб-сервера."""
