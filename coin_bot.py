@@ -1,7 +1,8 @@
 import asyncio
 import os
+import sys
 import uuid
-from datetime import datetime
+import traceback
 
 import aiohttp
 from aiohttp import web
@@ -12,46 +13,56 @@ from aiogram.types import (
     InlineKeyboardMarkup, InlineKeyboardButton
 )
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler
-
 from dotenv import load_dotenv
 
 from quantum_rng1 import QuantumRNG
-
 from constants import (
     logger, START_TEXT, UNKNOWN_MSG_TEXT, FLIP_COIN_BTN_TEXT, COIN_SIDE,
     get_duel_url, get_cache_size_status_msg, get_accept_duel_answer_msg,
     qstatus_answer, get_duel_answer_msg, get_flip_answer_msg, NO_WEBHOOK_ERR_MSG, ad_text
 )
-
 from ad_tools import POOL_SIZE, TRESHOLD, load_ad_links, calc_user_flip_coins, get_link, show_ad
 
 # ─────────────────── Конфиг ───────────────────
-#load_dotenv()
+print("=" * 50, flush=True)
+print("🚀 БОТ ЗАПУСКАЕТСЯ", flush=True)
+print("=" * 50, flush=True)
+
+load_dotenv()
 load_ad_links()
 
-TOKEN = os.environ["TG_BOT_TOKEN"]
-BOT_USERNAME = os.environ["BOT_USERNAME"]
-COIN_ANIMATION_ID = os.environ.get("COIN_ANIMATION_ID", "None")
+TOKEN = os.environ.get("TG_BOT_TOKEN", "")
+BOT_USERNAME = os.environ.get("BOT_USERNAME", "")
+COIN_ANIMATION_ID = os.environ.get("COIN_ANIMATION_ID", "")
 
-BASE_WEBHOOK_URL = os.environ.get(
-    "WEBHOOK_URL",
-    os.environ.get("RENDER_EXTERNAL_URL", "")
-)
+print(f"✅ TG_BOT_TOKEN получен: {TOKEN[:10]}...", flush=True)
+print(f"✅ BOT_USERNAME: {BOT_USERNAME}", flush=True)
+
+if not TOKEN:
+    print("❌ TG_BOT_TOKEN не задан!", flush=True)
+    sys.exit(1)
+
+# Определяем webhook URL
+RENDER_URL = os.environ.get("RENDER_EXTERNAL_URL", "")
+MANUAL_URL = os.environ.get("WEBHOOK_URL", "")
+
+print(f"🔍 RENDER_EXTERNAL_URL = '{RENDER_URL}'", flush=True)
+print(f"🔍 WEBHOOK_URL (manual) = '{MANUAL_URL}'", flush=True)
+
+BASE_WEBHOOK_URL = MANUAL_URL or RENDER_URL
 
 if not BASE_WEBHOOK_URL:
-    raise RuntimeError(NO_WEBHOOK_ERR_MSG)
+    print("❌ WEBHOOK_URL не задан! Установи переменную окружения WEBHOOK_URL", flush=True)
+    sys.exit(1)
 
 WEBHOOK_PATH = "/webhook"
 WEBHOOK_URL = f"{BASE_WEBHOOK_URL.rstrip('/')}{WEBHOOK_PATH}"
 
-logger.info(f"WEBHOOK_URL = {WEBHOOK_URL}")
-logger.info(f"BASE_WEBHOOK_URL = {BASE_WEBHOOK_URL}")
+print(f"✅ ИТОГОВЫЙ WEBHOOK_URL = {WEBHOOK_URL}", flush=True)
 
 WEBAPP_HOST = "0.0.0.0"
 WEBAPP_PORT = int(os.environ.get("PORT", 8080))
-
-#AD_LINK_1 = os.environ["AD_LINK_1"]
-load_ad_links()
+print(f"✅ PORT = {WEBAPP_PORT}", flush=True)
 
 # ─────────────────── QRNG ───────────────────
 qrng = QuantumRNG(pool_size=POOL_SIZE, refill_threshold=TRESHOLD)
@@ -67,46 +78,49 @@ keyboard = ReplyKeyboardMarkup(
 
 # ═══════════════════════ Хэндлеры ═══════════════════════
 
-
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
-    await message.answer(START_TEXT,
-parse_mode="HTML", reply_markup=keyboard)
-
+    try:
+        await message.answer(START_TEXT, reply_markup=keyboard, parse_mode="HTML")
+        logger.info("Отправлено приветствие")
+    except Exception as e:
+        logger.error(f"Ошибка в cmd_start: {e}", exc_info=True)
 
 @dp.message(F.text.in_([FLIP_COIN_BTN_TEXT, "/flip"]))
 async def flip_coin(message: types.Message):
-    user_id = message.from_user.id
-    
-    if COIN_ANIMATION_ID and len(COIN_ANIMATION_ID) > 10:
-        try:
-            anim_msg = await message.answer_animation(
-                animation=COIN_ANIMATION_ID,
-                caption="Монетка подброшена...",
-            )
-            await asyncio.sleep(2)
-            await anim_msg.delete()
-        except Exception:
-            pass
-
-    bit = await qrng.get_bit()
-    flip_answer = get_flip_answer_msg(bit)
-    logger.info(flip_answer)
-    
-    # 2. Отправляем сам результат подбрасывания
-    await message.answer(flip_answer, parse_mode="HTML", reply_markup=keyboard)
-
-    # ═══════════════════════ ЛОГИКА РЕКЛАМЫ ═══════════════════════
-    show_ad(user_id)
-
+    try:
+        user_id = message.from_user.id
+        
+        if COIN_ANIMATION_ID and len(COIN_ANIMATION_ID) > 10:
+            try:
+                anim_msg = await message.answer_animation(
+                    animation=COIN_ANIMATION_ID,
+                    caption="Монетка подброшена...",
+                )
+                await asyncio.sleep(2)
+                await anim_msg.delete()
+            except Exception as e:
+                logger.warning(f"Ошибка анимации: {e}")
+        
+        bit = await qrng.get_bit()
+        flip_answer = get_flip_answer_msg(bit)
+        logger.info(f"Результат flip: {flip_answer}")
+        
+        await message.answer(flip_answer, parse_mode="HTML", reply_markup=keyboard)
+        await show_ad(user_id, message)
+    except Exception as e:
+        logger.error(f"Ошибка в flip_coin: {e}", exc_info=True)
+        await message.answer("⚠️ Произошла ошибка. Попробуй позже.")
 
 @dp.message(F.text.startswith("/start duel_"))
 async def accept_duel(message: types.Message):
-    duel_id = message.text.split("_")[1]
-    bit = await qrng.get_shared_bit(duel_id)
-    answer_msg = get_accept_duel_answer_msg(bit)
-    await message.answer(answer_msg, parse_mode="HTML")
-
+    try:
+        duel_id = message.text.split("_")[1]
+        bit = await qrng.get_shared_bit(duel_id)
+        answer_msg = get_accept_duel_answer_msg(bit)
+        await message.answer(answer_msg, parse_mode="HTML")
+    except Exception as e:
+        logger.error(f"Ошибка в accept_duel: {e}", exc_info=True)
 
 @dp.message(Command("qstatus"))
 async def q_status(message: types.Message):
@@ -116,16 +130,15 @@ async def q_status(message: types.Message):
     logger.info(qstatus_answer_msg)
     await message.answer(qstatus_answer_msg)
 
-
 @dp.message(Command("duel"))
 async def create_duel(message: types.Message):
     duel_id = uuid.uuid4().hex[:8]
-    inline_kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(
+    inline_kb = InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(
             text="🎲 Принять вызов",
             url=get_duel_url(BOT_USERNAME, duel_id)
-        )]
-    ])
+        )
+    ]])
     duel_answer_msg = get_duel_answer_msg(duel_id)
     await message.answer(
         duel_answer_msg,
@@ -133,63 +146,91 @@ async def create_duel(message: types.Message):
         reply_markup=inline_kb,
     )
 
-
 @dp.message()
 async def unknown_message(message: types.Message):
     logger.info(UNKNOWN_MSG_TEXT)
     await message.answer(UNKNOWN_MSG_TEXT, reply_markup=keyboard)
 
-
 # ═══════════════════════ Webhook setup ═══════════════════════
 
-
 async def on_startup(app: web.Application):
+    print("\n" + "=" * 50, flush=True)
+    print("🔧 ON_STARTUP ЗАПУЩЕН", flush=True)
+    print("=" * 50, flush=True)
+    
+    # 1. Инициализируем QRNG (не критично, если упадёт)
     try:
+        print("🔄 Инициализация QRNG...", flush=True)
         await qrng.start()
-        logger.info(f"Setting webhook → {WEBHOOK_URL}")
-        await bot.set_webhook(
+        print("✅ QRNG инициализирован", flush=True)
+    except Exception as e:
+        print(f"⚠️ QRNG не инициализирован: {e}", flush=True)
+        traceback.print_exc()
+        print("⚠️ Продолжаем работу с fallback ГСЧ", flush=True)
+    
+    # 2. Устанавливаем webhook
+    try:
+        print(f"🔄 Установка webhook на {WEBHOOK_URL}...", flush=True)
+        
+        webhook_info = await bot.get_webhook_info()
+        print(f"📊 Текущий webhook: url='{webhook_info.url}', pending={webhook_info.pending_update_count}", flush=True)
+        
+        result = await bot.set_webhook(
             url=WEBHOOK_URL,
             allowed_updates=["message", "callback_query"],
             drop_pending_updates=True,
         )
-        logger.info("Webhook установлен успешно.")
+        print(f"✅ set_webhook вернул: {result}", flush=True)
+        
+        # Проверяем, что webhook действительно установился
+        await asyncio.sleep(1)
+        webhook_info = await bot.get_webhook_info()
+        print(f"📊 После установки: url='{webhook_info.url}'", flush=True)
+        
+        if webhook_info.url != WEBHOOK_URL:
+            print(f"❌ ВНИМАНИЕ! Webhook URL не совпадает!", flush=True)
+            print(f"   Ожидался: {WEBHOOK_URL}", flush=True)
+            print(f"   Получен:  {webhook_info.url}", flush=True)
+        else:
+            print("✅ Webhook установлен корректно!", flush=True)
+            
     except Exception as e:
-        logger.error(f"Ошибка при старте: {e}", exc_info=True)
-        # Продолжаем работу даже если QRNG не инициализирован
-        # (fallback на secrets всё равно сработает)
+        print(f"❌ ОШИБКА при установке webhook: {e}", flush=True)
+        traceback.print_exc()
 
 async def on_shutdown(app: web.Application):
-    """Корректное завершение."""
-    logger.info("Stopping bot...")
-    await bot.delete_webhook()
-    await qrng.close()
-    await bot.session.close()
-    logger.info("Bot stopped.")
-
+    print("🛑 ON_SHUTDOWN", flush=True)
+    try:
+        await bot.delete_webhook()
+        await qrng.close()
+        await bot.session.close()
+    except Exception as e:
+        print(f"Ошибка при shutdown: {e}", flush=True)
 
 async def health_check(request: web.Request):
-    """Health-check endpoint для Render."""
     return web.Response(text="OK", status=200)
 
-
 def create_app() -> web.Application:
-    """Сборка aiohttp-приложения."""
+    print("🔧 Сборка приложения...", flush=True)
     app = web.Application()
-
-    # Health-check на корневом URL (нужен для Render)
+    
     app.router.add_get("/", health_check)
-
-    # Lifecycle hooks
+    
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
-
-    # Aiogram webhook handler
-    request_handler = SimpleRequestHandler(dispatcher=dp, bot=bot)
-    request_handler.register(app, path=WEBHOOK_PATH)
-
+    
+    try:
+        request_handler = SimpleRequestHandler(dispatcher=dp, bot=bot)
+        request_handler.register(app, path=WEBHOOK_PATH)
+        print(f"✅ Webhook handler зарегистрирован на {WEBHOOK_PATH}", flush=True)
+    except Exception as e:
+        print(f"❌ Ошибка регистрации handler: {e}", flush=True)
+        traceback.print_exc()
+    
     return app
 
-
 if __name__ == "__main__":
+    print("🏁 Запуск веб-сервера...", flush=True)
+    print(f"   Host: {WEBAPP_HOST}, Port: {WEBAPP_PORT}", flush=True)
     app = create_app()
     web.run_app(app, host=WEBAPP_HOST, port=WEBAPP_PORT)
