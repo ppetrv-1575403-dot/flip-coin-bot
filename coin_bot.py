@@ -234,7 +234,8 @@ def create_app() -> web.Application:
 #    print(f"   Host: {WEBAPP_HOST}, Port: {WEBAPP_PORT}", flush=True)
 #    app = create_app()
 #    web.run_app(app, host=WEBAPP_HOST, port=WEBAPP_PORT)
-    
+
+
 async def setup_webhook():
     """Устанавливаем webhook после запуска сервера."""
     try:
@@ -253,12 +254,6 @@ async def setup_webhook():
     except Exception as e:
         print(f"❌ Ошибка установки webhook: {e}", flush=True)
 
-async def setup_webhook():
-    # Проверяем текущий webhook
-    info = await bot.get_webhook_info()
-    if info.url != WEBHOOK_URL:
-        print(f"⚠️ Webhook не совпадает: {info.url} != {WEBHOOK_URL}", flush=True)
-        await bot.set_webhook(url=WEBHOOK_URL, ...)
 
 async def main():
     """Главная функция запуска."""
