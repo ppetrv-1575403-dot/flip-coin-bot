@@ -35,8 +35,8 @@ def load_ad_links():
             i += 1
         else:
             break
-    if not ad_links:
-        raise RuntimeError(NO_AD_LINK_ERR_MSG)
+    #if not ad_links:
+    #    raise RuntimeError(NO_AD_LINK_ERR_MSG)
 
 
 def get_link(flip_count):
