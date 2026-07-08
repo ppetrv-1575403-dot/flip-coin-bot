@@ -94,20 +94,20 @@ class QuantumRNG:
             
             
     async def get_shared_bit(self, duel_id: str) -> int:
-    """
-    Получить квантовый бит для совместного спора.
-    Один и тот же duel_id всегда возвращает один и тот же бит.
-    """
-    # Детерминированный маппинг duel_id → индекс в пулеm1
-    # Это гарантирует, что оба участника получат одинаковый результат
-    hash_val = int(hashlib.sha256(duel_id.encode()).hexdigest(), 16)
+        """
+        Получить квантовый бит для совместного спора.
+        Один и тот же duel_id всегда возвращает один и тот же бит.
+        """
+        # Детерминированный маппинг duel_id → индекс в пулеm1
+        # Это гарантирует, что оба участника получат одинаковый результат
+        hash_val = int(hashlib.sha256(duel_id.encode()).hexdigest(), 16)
     
-    async with self._lock:
-        if not self._pool:
-            return secrets.randbelow(2)
+        async with self._lock:
+            if not self._pool:
+                return secrets.randbelow(2)
         
-        index = hash_val % len(self._pool)
-        bit = self._pool[index]
-        # НЕ удаляем бит из пула (popleft), чтобы второй участник получил тот же
+            index = hash_val % len(self._pool)
+            bit = self._pool[index]
+            # НЕ удаляем бит из пула (popleft), чтобы второй участник получил тот же
         
-    return bit
+        return bit
