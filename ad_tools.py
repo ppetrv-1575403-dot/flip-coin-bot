@@ -40,6 +40,8 @@ def load_ad_links():
 
 
 def get_link(flip_count):
+    if not ad_links:
+        return ""
     idx = flip_count / AD_INTERVAL
     if idx  >= len(ad_links):
         idx = 0

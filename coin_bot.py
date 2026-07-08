@@ -153,60 +153,6 @@ async def unknown_message(message: types.Message):
 
 # ═══════════════════════ Webhook setup ═══════════════════════
 
-async def on_startup(app: web.Application):
-    print("\n" + "=" * 50, flush=True)
-    print("🔧 ON_STARTUP ЗАПУЩЕН", flush=True)
-    print("=" * 50, flush=True)
-    
-    # 1. Инициализируем QRNG (не критично, если упадёт)
-    try:
-        print("🔄 Инициализация QRNG...", flush=True)
-        await qrng.start()
-        print("✅ QRNG инициализирован", flush=True)
-    except Exception as e:
-        print(f"⚠️ QRNG не инициализирован: {e}", flush=True)
-        traceback.print_exc()
-        print("⚠️ Продолжаем работу с fallback ГСЧ", flush=True)
-    
-    # 2. Устанавливаем webhook
-    try:
-        print(f"🔄 Установка webhook на {WEBHOOK_URL}...", flush=True)
-        
-        webhook_info = await bot.get_webhook_info()
-        print(f"📊 Текущий webhook: url='{webhook_info.url}', pending={webhook_info.pending_update_count}", flush=True)
-        
-        result = await bot.set_webhook(
-            url=WEBHOOK_URL,
-            allowed_updates=["message", "callback_query"],
-            drop_pending_updates=True,
-        )
-        print(f"✅ set_webhook вернул: {result}", flush=True)
-        
-        # Проверяем, что webhook действительно установился
-        await asyncio.sleep(1)
-        webhook_info = await bot.get_webhook_info()
-        print(f"📊 После установки: url='{webhook_info.url}'", flush=True)
-        
-        if webhook_info.url != WEBHOOK_URL:
-            print(f"❌ ВНИМАНИЕ! Webhook URL не совпадает!", flush=True)
-            print(f"   Ожидался: {WEBHOOK_URL}", flush=True)
-            print(f"   Получен:  {webhook_info.url}", flush=True)
-        else:
-            print("✅ Webhook установлен корректно!", flush=True)
-            
-    except Exception as e:
-        print(f"❌ ОШИБКА при установке webhook: {e}", flush=True)
-        traceback.print_exc()
-
-async def on_shutdown(app: web.Application):
-    print("🛑 ON_SHUTDOWN", flush=True)
-    try:
-        await bot.delete_webhook()
-        await qrng.close()
-        await bot.session.close()
-    except Exception as e:
-        print(f"Ошибка при shutdown: {e}", flush=True)
-
 async def health_check(request: web.Request):
     return web.Response(text="OK", status=200)
 
@@ -228,12 +174,6 @@ def create_app() -> web.Application:
         traceback.print_exc()
     
     return app
-
-#if __name__ == "__main__":
-#    print("🏁 Запуск веб-сервера...", flush=True)
-#    print(f"   Host: {WEBAPP_HOST}, Port: {WEBAPP_PORT}", flush=True)
-#    app = create_app()
-#    web.run_app(app, host=WEBAPP_HOST, port=WEBAPP_PORT)
 
 
 async def setup_webhook():
