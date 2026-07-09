@@ -53,20 +53,34 @@ def get_duel_share_msg(duel_url):
     )
 
 
-def get_duel_answer_msg(bit):
+def get_duel_answer_msg(bit, duel_id):
     result = COIN_SIDE[bit]
     return (
-        f"⚔️ <b>Квантовый спор решён!</b>\n\n"
+        f"⚔️ <b>Квантовый спор #{duel_id}</b>\n\n"
         f"Результат общего измерения: <b>{result}</b>\n\n"
-        f"<i>Этот же результат видит твой оппонент.</i>\n"
-        f"Квантовая физика не врёт."
+        f"<i>Твой друг уже видит этот же результат.\n"
+        f"Квантовая физика гарантирует честность.</i>"
     )
-    
-duel_answer_msg = (
+
+
+duel_accept_answer_msg = (
         "🎲 <b>Квантовый спор создан!</b>\n\n"
         "Нажми кнопку ниже, чтобы выбрать друга из списка чатов.\n"
         "Telegram автоматически подготовит сообщение с приглашением."
     )
+
+
+
+
+    # Получаем тот же бит, что и создатель
+    bit = await qrng.get_shared_bit(duel_id)
+    result = "Орёл 🦅" if bit == 0 else "Решка 🔢"
+    
+    await message.answer(
+        parse_mode="HTML"
+    )
+
+
 
 
 def qstatus_answer(bits_cache_size, status):

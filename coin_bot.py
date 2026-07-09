@@ -20,7 +20,7 @@ import uuid
 from quantum_rng1 import QuantumRNG
 from constants import (
     logger, START_TEXT, UNKNOWN_MSG_TEXT, FLIP_COIN_BTN_TEXT, COIN_SIDE,
-    get_duel_url, get_cache_size_status_msg, duel_answer_msg, get_duel_share_msg, qstatus_answer, get_flip_answer_msg, NO_WEBHOOK_ERR_MSG, ad_text
+    get_duel_url, get_cache_size_status_msg, duel_answer_msg, get_duel_share_msg, qstatus_answer, get_flip_answer_msg, get_duel_answer_msg, NO_WEBHOOK_ERR_MSG, ad_text
 )
 from ad_tools import POOL_SIZE, TRESHOLD, load_ad_links, calc_user_flip_coins, get_link, show_ad
 
@@ -122,6 +122,19 @@ async def accept_duel(message: types.Message):
         await message.answer(answer_msg, parse_mode="HTML")
     except Exception as e:
         logger.error(f"Ошибка в accept_duel: {e}", exc_info=True)
+
+
+@dp.message(F.text.regexp(r"^/start duel_([a-f0-9]{8})$"))
+async def accept_duel(message: types.Message):
+    """Обработка принятия спора с контекстом"""
+    duel_id = message.regexp_match.group(1)
+    
+    duel_answer_msg = get_duel_answer_msg(bit, duel_id)
+    
+    await message.answer(duel_answer_msg,
+       parse_mode="HTML"
+    )
+
 
 @dp.message(Command("qstatus"))
 async def q_status(message: types.Message):
