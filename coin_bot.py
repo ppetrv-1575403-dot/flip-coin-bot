@@ -156,25 +156,6 @@ async def unknown_message(message: types.Message):
 async def health_check(request: web.Request):
     return web.Response(text="OK", status=200)
 
-def create_app() -> web.Application:
-    print("🔧 Сборка приложения...", flush=True)
-    app = web.Application()
-    
-    app.router.add_get("/", health_check)
-    
-    app.on_startup.append(on_startup)
-    app.on_shutdown.append(on_shutdown)
-    
-    try:
-        request_handler = SimpleRequestHandler(dispatcher=dp, bot=bot)
-        request_handler.register(app, path=WEBHOOK_PATH)
-        print(f"✅ Webhook handler зарегистрирован на {WEBHOOK_PATH}", flush=True)
-    except Exception as e:
-        print(f"❌ Ошибка регистрации handler: {e}", flush=True)
-        traceback.print_exc()
-    
-    return app
-
 
 async def setup_webhook():
     """Устанавливаем webhook после запуска сервера."""

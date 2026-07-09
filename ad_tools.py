@@ -7,7 +7,7 @@ from aiogram.types import (
 
 from aiogram import types
 
-from constants import NO_AD_LINK_ERR_MSG
+from constants import logger, NO_AD_LINK_ERR_MSG
 
 AD_INTERVAL = 5
 
