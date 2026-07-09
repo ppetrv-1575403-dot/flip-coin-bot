@@ -140,7 +140,7 @@ async def create_duel(message: types.Message):
     
     # Текст, который автоматически подставится в поле ввода при выборе чата
     
-    duel_url = get_duel_url(user, duel_id)
+    duel_url = get_duel_url(BOT_USERNAME, duel_id)
     
     share_text = get_duel_share_msg(duel_url)
 
