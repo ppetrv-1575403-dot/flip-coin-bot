@@ -142,9 +142,7 @@ async def create_duel(message: types.Message):
     duel_url = get_duel_url(user, duel_id)
     
     share_text = get_duel_share_msg(duel_url)
-    
-    , get_duel_answer_msg, qstatus_answer, get_flip_answer_
-    
+
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(
             text="⚔️ Выбрать друга в Telegram",
