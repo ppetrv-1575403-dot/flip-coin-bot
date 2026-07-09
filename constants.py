@@ -70,19 +70,6 @@ duel_accept_answer_msg = (
     )
 
 
-
-
-    # Получаем тот же бит, что и создатель
-    bit = await qrng.get_shared_bit(duel_id)
-    result = "Орёл 🦅" if bit == 0 else "Решка 🔢"
-    
-    await message.answer(
-        parse_mode="HTML"
-    )
-
-
-
-
 def qstatus_answer(bits_cache_size, status):
     return (
         f"📊 Статус квантового пула:\n"
