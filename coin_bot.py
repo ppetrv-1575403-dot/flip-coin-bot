@@ -15,11 +15,12 @@ from aiogram.types import (
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler
 from dotenv import load_dotenv
 
+import uuid
+
 from quantum_rng1 import QuantumRNG
 from constants import (
     logger, START_TEXT, UNKNOWN_MSG_TEXT, FLIP_COIN_BTN_TEXT, COIN_SIDE,
-    get_duel_url, get_cache_size_status_msg, get_accept_duel_answer_msg,
-    qstatus_answer, get_duel_answer_msg, get_flip_answer_msg, NO_WEBHOOK_ERR_MSG, ad_text
+    get_duel_url, get_cache_size_status_msg, duel_answer_msg, get_duel_share_msg, qstatus_answer, get_flip_answer_msg, NO_WEBHOOK_ERR_MSG, ad_text
 )
 from ad_tools import POOL_SIZE, TRESHOLD, load_ad_links, calc_user_flip_coins, get_link, show_ad
 
@@ -130,21 +131,36 @@ async def q_status(message: types.Message):
     logger.info(qstatus_answer_msg)
     await message.answer(qstatus_answer_msg)
 
+
 @dp.message(Command("duel"))
 async def create_duel(message: types.Message):
+    """Создание квантового спора с нативным выбором чата"""
     duel_id = uuid.uuid4().hex[:8]
-    inline_kb = InlineKeyboardMarkup(inline_keyboard=[[
-        InlineKeyboardButton(
-            text="🎲 Принять вызов",
-            url=get_duel_url(BOT_USERNAME, duel_id)
-        )
-    ]])
-    duel_answer_msg = get_duel_answer_msg(duel_id)
-    await message.answer(
-        duel_answer_msg,
+    
+    # Текст, который автоматически подставится в поле ввода при выборе чата
+    
+    duel_url = get_duel_url(user, duel_id)
+    
+    share_text = get_duel_share_msg(duel_url)
+    
+    , get_duel_answer_msg, qstatus_answer, get_flip_answer_
+    
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(
+            text="⚔️ Выбрать друга в Telegram",
+            switch_inline_query=share_text  # ← Ключевой параметр
+        )],
+        [InlineKeyboardButton(
+            text="📋 Скопировать ссылку вручную",
+            url=duel_url
+        )]
+    ])
+    
+    await message.answer(duel_answer_msg,
         parse_mode="HTML",
-        reply_markup=inline_kb,
+        reply_markup=keyboard
     )
+
 
 @dp.message()
 async def unknown_message(message: types.Message):

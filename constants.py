@@ -31,10 +31,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def get_duel_url(user, duel_id):
-    return f"https://t.me/{user}?start=duel_{duel_id}"
-
-
 def get_cache_size_status_msg(bits_cache_size, refill_threshold):
     return "✅ Норма" if bits_cache_size > refill_threshold else "⚠️ Пополняется"
 
@@ -44,13 +40,32 @@ def get_flip_answer_msg(bit):
     return f"Результат: <b>{result}</b>"
 
 
-def get_accept_duel_answer_msg(bit):
+def get_duel_url(user, duel_id):
+    return f"https://t.me/{user}?start=duel_{duel_id}"
+
+
+def get_duel_share_msg(duel_url):
+    return (
+        f"⚔️ Квантовый спор!\n\n"
+        f"Я создал(а) честное квантовое измерение для нас.\n"
+        f"Нажми кнопку ниже, чтобы узнать результат:\n"
+        f"{duel_url}"
+    )
+
+
+def get_duel_answer_msg(bit):
     result = COIN_SIDE[bit]
     return (
         f"⚔️ <b>Квантовый спор решён!</b>\n\n"
         f"Результат общего измерения: <b>{result}</b>\n\n"
         f"<i>Этот же результат видит твой оппонент.</i>\n"
         f"Квантовая физика не врёт."
+    )
+    
+duel_answer_msg = (
+        "🎲 <b>Квантовый спор создан!</b>\n\n"
+        "Нажми кнопку ниже, чтобы выбрать друга из списка чатов.\n"
+        "Telegram автоматически подготовит сообщение с приглашением."
     )
 
 
@@ -60,16 +75,6 @@ def qstatus_answer(bits_cache_size, status):
         f"• Битов в запасе: {bits_cache_size}\n"
         f"• Состояние: {status}\n"
         f"• Провайдер: ANU Quantum Random"
-    )
-
-
-def get_duel_answer_msg(duel_id):
-    return (
-        f"⚔️ <b>Квантовый спор создан!</b>\n\n"
-        f"Отправь эту кнопку другу.\n"
-        f"Когда он нажмёт «Принять вызов», вы оба получите "
-        f"результат <i>одного и того же</i> квантового измерения.\n\n"
-        f"<code>ID: {duel_id}</code>"
     )
 
 
