@@ -14,7 +14,7 @@ from aiogram.types import (
 )
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler
 from dotenv import load_dotenv
-⁶
+
 from quantum_rng1 import QuantumRNG
 from constants import (
     logger, START_TEXT, UNKNOWN_MSG_TEXT, FLIP_COIN_BTN_TEXT, COIN_SIDE,
