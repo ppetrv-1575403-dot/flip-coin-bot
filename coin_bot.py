@@ -155,6 +155,7 @@ async def create_duel(message: types.Message):
         [InlineKeyboardButton(
             text="📋 Скопировать ссылку",
             callback_data=f"copy_duel:{duel_id}"  # ← callback вместо url
+        )]
     ])
     
     await message.answer(duel_accept_answer_msg,
