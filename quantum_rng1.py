@@ -14,6 +14,7 @@ ANU_API_URL = "https://qrng.anu.edu.au/API/jsonI.php"
 BITS_SIZE = 1024
 POOL_SIZE = 500
 REFIL_TRSLD = 100
+NET_STTUS_OK = 200
 
 class QuantumRNG:
     """
@@ -71,7 +72,7 @@ class QuantumRNG:
 
             params = {"length": str(request_size), "type": "uint8"}
             async with self._session.get(ANU_API_URL, params=params, timeout=aiohttp.ClientTimeout(total=10)) as resp:
-                if resp.status != 200:
+                if resp.status != NET_STTUS_OK:
                     raise RuntimeError(f"API вернул статус {resp.status}")
                 data = await resp.json()
 

@@ -18,7 +18,9 @@ from dotenv import load_dotenv
 from quantum_rng1 import QuantumRNG
 from constants import (
     logger, START_TEXT, UNKNOWN_MSG_TEXT, FLIP_COIN_BTN_TEXT, COIN_SIDE,
-    get_duel_url, get_cache_size_status_msg, duel_accept_answer_msg, get_duel_share_msg, qstatus_answer, get_flip_answer_msg, get_duel_answer_msg, NO_WEBHOOK_ERR_MSG, ad_text
+    get_duel_url, get_cache_size_status_msg, duel_accept_answer_msg, get_duel_share_msg, qstatus_answer, get_flip_answer_msg, get_duel_answer_msg, NO_WEBHOOK_ERR_MSG, ad_text,
+        get_callback_copy_duel_url,
+        copy_link_answer_msg
 )
 from ad_tools import POOL_SIZE, TRESHOLD, load_ad_links, calc_user_flip_coins, get_link, show_ad
 
@@ -77,6 +79,18 @@ keyboard = ReplyKeyboardMarkup(
 
 # ═══════════════════════ Хэндлеры ═══════════════════════
 
+@dp.message(F.text.regexp(r"^/start duel_([a-f0-9]{8})$"))
+async def accept_duel(message: types.Message):
+    """Обработка принятия спора с контекстом"""
+    duel_id = message.regexp_match.group(1)
+    
+    duel_answer_msg = get_duel_answer_msg(bit, duel_id)
+    
+    await message.answer(duel_answer_msg,
+       parse_mode="HTML"
+    )
+
+
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     try:
@@ -84,6 +98,7 @@ async def cmd_start(message: types.Message):
         logger.info("Отправлено приветствие")
     except Exception as e:
         logger.error(f"Ошибка в cmd_start: {e}", exc_info=True)
+
 
 @dp.message(F.text.in_([FLIP_COIN_BTN_TEXT, "/flip"]))
 async def flip_coin(message: types.Message):
@@ -112,18 +127,6 @@ async def flip_coin(message: types.Message):
         await message.answer("⚠️ Произошла ошибка. Попробуй позже.")
 
 
-@dp.message(F.text.regexp(r"^/start duel_([a-f0-9]{8})$"))
-async def accept_duel(message: types.Message):
-    """Обработка принятия спора с контекстом"""
-    duel_id = message.regexp_match.group(1)
-    
-    duel_answer_msg = get_duel_answer_msg(bit, duel_id)
-    
-    await message.answer(duel_answer_msg,
-       parse_mode="HTML"
-    )
-
-
 @dp.message(Command("qstatus"))
 async def q_status(message: types.Message):
     bits_cache_size = len(qrng._pool)
@@ -150,15 +153,29 @@ async def create_duel(message: types.Message):
             switch_inline_query=share_text  # ← Ключевой параметр
         )],
         [InlineKeyboardButton(
-            text="📋 Скопировать ссылку вручную",
-            url=duel_url
-        )]
+            text="📋 Скопировать ссылку",
+            callback_data=f"copy_duel:{duel_id}"  # ← callback вместо url
     ])
     
     await message.answer(duel_accept_answer_msg,
         parse_mode="HTML",
         reply_markup=keyboard
     )
+
+
+# ==================== ОБРАБОТКА КОПИРОВАНИЯ ====================
+
+@dp.callback_query(F.data.startswith("copy_duel:"))
+async def copy_duel_link(callback: CallbackQuery):
+    duel_id = callback.data.split(":")[1]
+    callback_copy_duel_url = 
+    get_callback_copy_duel_url(duel_url)
+    # Отправляем ссылку отдельным сообщением, которое пользователь может скопировать
+    await callback.message.answer(
+        callback_copy_duel_url,
+        parse_mode="HTML"
+    )
+    await callback.answer(copy_link_answer_msg)
 
 
 @dp.message()
@@ -222,6 +239,7 @@ async def main():
     
     # Держим сервер запущенным
     await asyncio.Event().wait()
+
 
 if __name__ == "__main__":
     try:
