@@ -29,7 +29,7 @@ print("=" * 50, flush=True)
 print("🚀 БОТ ЗАПУСКАЕТСЯ", flush=True)
 print("=" * 50, flush=True)
 
-load_dotenv()
+#load_dotenv()
 load_ad_links()
 
 TOKEN = os.environ.get("TG_BOT_TOKEN", "")
@@ -136,6 +136,23 @@ async def q_status(message: types.Message):
     await message.answer(qstatus_answer_msg)
 
 
+# ==================== ОБРАБОТКА КОПИРОВАНИЯ ====================
+
+@dp.callback_query(F.data.startswith("copy_duel:"))
+async def copy_duel_link(callback: CallbackQuery):
+    duel_id = callback.data.split(":")[1]
+    duel_url = get_duel_url(BOT_USERNAME, duel_id)
+    callback_copy_duel_url = get_callback_copy_duel_url(duel_url)
+    print(f"DEBUG link type={type(link)}, value={repr(link)}")
+    print(f"DEBUG duel_id={repr(duel_id)}")
+    # Отправляем ссылку отдельным сообщением, которое пользователь может скопировать
+    await callback.message.answer(
+        callback_copy_duel_url,
+        parse_mode="HTML"
+    )
+    await callback.answer(copy_link_answer_msg)
+
+
 @dp.message(Command("duel"))
 async def create_duel(message: types.Message):
     """Создание квантового спора с нативным выбором чата"""
@@ -162,21 +179,6 @@ async def create_duel(message: types.Message):
         parse_mode="HTML",
         reply_markup=keyboard
     )
-
-
-# ==================== ОБРАБОТКА КОПИРОВАНИЯ ====================
-
-@dp.callback_query(F.data.startswith("copy_duel:"))
-async def copy_duel_link(callback: CallbackQuery):
-    duel_id = callback.data.split(":")[1]
-    duel_url = get_duel_url(BOT_USERNAME, duel_id)
-    callback_copy_duel_url = get_callback_copy_duel_url(duel_url)
-    # Отправляем ссылку отдельным сообщением, которое пользователь может скопировать
-    await callback.message.answer(
-        callback_copy_duel_url,
-        parse_mode="HTML"
-    )
-    await callback.answer(copy_link_answer_msg)
 
 
 @dp.message()
