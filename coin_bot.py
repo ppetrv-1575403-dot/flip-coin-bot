@@ -143,7 +143,7 @@ async def copy_duel_link(callback: CallbackQuery):
     duel_id = callback.data.split(":")[1]
     duel_url = get_duel_url(BOT_USERNAME, duel_id)
     callback_copy_duel_url = get_callback_copy_duel_url(duel_url)
-    print(f"DEBUG link type={type(link)}, value={repr(link)}")
+    print(f"DEBUG link type={type(duel_url)}, value={repr(duel_url)}")
     print(f"DEBUG duel_id={repr(duel_id)}")
     # Отправляем ссылку отдельным сообщением, которое пользователь может скопировать
     await callback.message.answer(
