@@ -89,7 +89,7 @@ async def accept_duel(message: types.Message):
         return
         
     duel_id = match.group(1)
-   
+    bit = await qrng.get_shared_bit(duel_id)
     duel_answer_msg = get_duel_answer_msg(bit, duel_id)
     
     await message.answer(duel_answer_msg,
