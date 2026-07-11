@@ -28,7 +28,7 @@ from ad_tools import POOL_SIZE, TRESHOLD, load_ad_links, calc_user_flip_coins, g
 
 from duel_store import init_duel_store, save_duel_creator, get_duel_creator, delete_duel, if_duel_exists
 
-from duel_constants import generate_duel_id, DUEL_PATTERN
+from duel_tools import generate_duel_id, DUEL_PATTERN
 
 # ─────────────────── Конфиг ───────────────────
 print("=" * 50, flush=True)
