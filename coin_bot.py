@@ -37,9 +37,9 @@ print("=" * 50, flush=True)
 print("🚀 БОТ ЗАПУСКАЕТСЯ", flush=True)
 print("=" * 50, flush=True)
 
-load_dotenv()
+load_dotenv() 
 load_ad_links()
-init_duel_store()
+#init_duel_store()
 
 TOKEN = os.environ.get("TG_BOT_TOKEN", "")
 BOT_USERNAME = os.environ.get("BOT_USERNAME", "")
