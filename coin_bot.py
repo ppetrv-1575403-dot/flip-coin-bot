@@ -192,7 +192,7 @@ async def copy_duel_link(callback: CallbackQuery):
 async def check_duel_status(callback: CallbackQuery):
     
     duel_id = callback.data.split(":")[1]
-    exists = if_duel_exists(duel_id)
+    exists = await if_duel_exists(duel_id)
 
     if exists:
         await callback.answer(duel_not_accepted_msg, show_alert=True)
