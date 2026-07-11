@@ -20,7 +20,7 @@ from constants import (
     logger, START_TEXT, UNKNOWN_MSG_TEXT, FLIP_COIN_BTN_TEXT, COIN_SIDE,
     get_duel_url, get_cache_size_status_msg, duel_accept_answer_msg, get_duel_share_msg, qstatus_answer, get_flip_answer_msg, get_duel_answer_msg, NO_WEBHOOK_ERR_MSG, ad_text,
         get_callback_copy_duel_url,
-        copy_link_answer_msg
+        copy_link_answer_msg, DUEL_PATTERN
 )
 from ad_tools import POOL_SIZE, TRESHOLD, load_ad_links, calc_user_flip_coins, get_link, show_ad
 
@@ -79,11 +79,17 @@ keyboard = ReplyKeyboardMarkup(
 
 # ═══════════════════════ Хэндлеры ═══════════════════════
 
-@dp.message(F.text.regexp(r"^/start duel_([a-f0-9]{8})$"))
+@dp.message(F.text.regexp(DUEL_PATTERN))
 async def accept_duel(message: types.Message):
-    """Обработка принятия спора с контекстом"""
-    duel_id = message.regexp_match.group(1)
     
+    # Извлекаем группы из совпадения
+    match = DUEL_PATTERN.match(message.text)
+    if not match:
+        await message.answer("❌ Неверная ссылка на спор.")
+        return
+        
+    duel_id = match.group(1)
+   
     duel_answer_msg = get_duel_answer_msg(bit, duel_id)
     
     await message.answer(duel_answer_msg,

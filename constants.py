@@ -1,4 +1,9 @@
 import logging
+import re
+from aiogram import F
+from aiogram.filters import CommandObject
+
+DUEL_PATTERN = re.compile(r"^/start duel_([a-f0-9]{8})$")
 
 # ─────────────────── Константы ───────────────────
 
