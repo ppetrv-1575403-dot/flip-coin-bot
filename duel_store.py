@@ -7,6 +7,8 @@ from constants import logger
 
 from dotenv import load_dotenv
 
+# Глобальная переменная соединения (безопасная инициализация)
+rdb: redis.Redis | None = None
 
 def init_duel_store():
     global rdb
