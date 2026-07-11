@@ -15,24 +15,28 @@ def init_duel_store():
     
     redis_url = os.getenv("REDIS_URL", REDIS_DEF_URL)
     
-    # Диагностика URL
+    # Upstash требует SSL. Если URL начинается с redis://, заменяем на rediss://
+    if "upstash.io" in redis_url and not redis_url.startswith("rediss://"):
+        redis_url = redis_url.replace("redis://", "rediss://", 1)
+        logger.info("🔒 Upstash detected: switched to rediss:// (SSL)")
+    
     logger.info(f"🔍 REDIS_URL: {redis_url[:20]}...{redis_url[-20:] if len(redis_url) > 40 else ''}")
-    logger.info(f"🔍 Длина: {len(redis_url)}, SSL: {redis_url.startswith('rediss://')}, Internal: {'internal' in redis_url}")
     
     try:
+        # В Redis 8.x SSL параметры лучше передавать через ssl_cert_reqs
+        # decode_responses=True работает корректно только при правильном SSL handshake
         rdb = redis.from_url(
             redis_url, 
             encoding="utf-8", 
             decode_responses=True,
             socket_connect_timeout=10,
             retry_on_timeout=True,
-            ssl=redis_url.startswith("rediss://")
+            ssl_cert_reqs=None  # ← Ключевое исправление для Redis 8.x + Upstash
         )
         logger.info("✅ Redis клиент создан")
     except Exception as e:
         logger.error(f"❌ Ошибка создания клиента: {e}", exc_info=True)
         raise RuntimeError(f"Не удалось создать Redis клиент: {e}")
-
 
 async def _get_rdb() -> redis.Redis:
     """Безопасное получение соединения с проверкой"""
