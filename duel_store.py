@@ -6,7 +6,7 @@ from duel_tools import REDIS_DEF_URL, DUEL_TTL
 
 # Подключение к Redis (Upstash Free или локальный)
 REDIS_URL = ""
-
+rdb = None
 
 def init_duel_store():
     # Подключение к Redis (Upstash Free или локальный)
