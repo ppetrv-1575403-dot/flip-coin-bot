@@ -26,7 +26,9 @@ from constants import (
 
 from ad_tools import POOL_SIZE, TRESHOLD, load_ad_links, calc_user_flip_coins, get_link, show_ad
 
-from duel_store import init_duel_store, save_duel_creator, get_duel_creator, delete_duel, if_duel_exists, rdb
+import duel_store 
+
+#import init_duel_store, save_duel_creator, get_duel_creator, delete_duel, if_duel_exists, rdb
 
 from duel_tools import generate_duel_id, DUEL_PATTERN
 
@@ -105,7 +107,7 @@ async def accept_duel(message: types.Message):
     )
     
     # ✅ Отправляем результат создателю (Пользователь А)
-    creator_chat_id = await get_duel_creator(duel_id)
+    creator_chat_id = await duel_store.get_duel_creator(duel_id)
     if creator_chat_id:
         try:
             duel_complete_msg = get_duel_complete_msg(bit)
@@ -119,7 +121,7 @@ async def accept_duel(message: types.Message):
             logger.warning(f"Не удалось уведомить создателя {creator_chat_id}: {e}")
 
         # Удаляем запись о споре — он завершён
-        await delete_duel(duel_id)
+        await duel_store.delete_duel(duel_id)
     else:
         logger.warning(f"Создатель спора {duel_id} не найден в Redis")
 
@@ -190,7 +192,7 @@ async def copy_duel_link(callback: CallbackQuery):
 async def check_duel_status(callback: CallbackQuery):
     
     duel_id = callback.data.split(":")[1]
-    exists = if_duel_exists(duel_id)
+    exists = duel_store.if_duel_exists(duel_id)
 
     if exists:
         await callback.answer(duel_not_accepted_msg, show_alert=True)
@@ -204,7 +206,7 @@ async def create_duel(message: types.Message):
     duel_id = generate_duel_id()
     
     # 💾 Сохраняем chat_id создателя
-    await save_duel_creator(duel_id, message.chat.id)
+    await duel_store.save_duel_creator(duel_id, message.chat.id)
     
     # Текст, который автоматически подставится в поле ввода при выборе чата
     
@@ -250,7 +252,7 @@ async def on_startup(app):
     
     # 2. Проверяем реальное соединение (ping)
     try:
-        await rdb.ping()
+        await duel_store.rdb.ping()
         logger.info("✅ Redis ping успешен")
     except Exception as e:
         logger.error(f"❌ Redis ping провален: {e}")
