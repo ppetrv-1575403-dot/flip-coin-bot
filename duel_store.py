@@ -3,7 +3,7 @@ import redis.asyncio as redis
 
 from constants import logger, REDIS_DEF_URL
 
-from duel_constants import generate_duel_id, REDIS_DEF_URL, DUEL_TTL
+from duel_tools import REDIS_DEF_URL, DUEL_TTL
 
 
 # Подключение к Redis (Upstash Free или локальный)
