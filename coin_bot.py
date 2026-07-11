@@ -248,7 +248,7 @@ async def health_check(request: web.Request):
 
 async def on_startup(app):
     # 1. Сначала подключаем Redis
-    init_duel_store()
+    duel_store.init_duel_store()
     
     # 2. Проверяем реальное соединение (ping)
     try:
