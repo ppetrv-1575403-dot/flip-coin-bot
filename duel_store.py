@@ -1,8 +1,6 @@
 import os
 import redis.asyncio as redis
 
-from constants import logger, REDIS_DEF_URL
-
 from duel_tools import REDIS_DEF_URL, DUEL_TTL
 
 
