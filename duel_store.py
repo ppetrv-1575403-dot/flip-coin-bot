@@ -11,7 +11,7 @@ rdb = None
 def init_duel_store():
     # Подключение к Redis (Upstash Free или локальный)
     REDIS_URL = os.getenv("REDIS_URL", REDIS_DEF_URL)
-    rdb = redis.from_url(REDIS_URL, encoding="utf-8", decode_responses=True)
+    global rdb = redis.from_url(REDIS_URL, encoding="utf-8", decode_responses=True)
 
 
 async def save_duel_creator(duel_id: str, chat_id: int):
