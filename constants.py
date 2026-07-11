@@ -82,7 +82,7 @@ def qstatus_answer(bits_cache_size, status):
     )
     
 def get_callback_copy_duel_url(duel_url):
-    (f"📋 <b>Ссылка на спор:</b>\n<code>{duel_url}</code>\n\n"
+    return (f"📋 <b>Ссылка на спор:</b>\n<code>{duel_url}</code>\n\n"
         f"<i>Нажми на ссылку выше, чтобы скопировать, "
         f"и отправь её другу.</i>"
     )
