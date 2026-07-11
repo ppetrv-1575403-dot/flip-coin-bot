@@ -26,7 +26,7 @@ from constants import (
 
 from ad_tools import POOL_SIZE, TRESHOLD, load_ad_links, calc_user_flip_coins, get_link, show_ad
 
-from duel_store import init_duel_store, save_duel_creator, get_duel_creator, delete_duel, if_duel_exists
+from duel_store import init_duel_store, save_duel_creator, get_duel_creator, delete_duel, if_duel_exists, rdb
 
 from duel_tools import generate_duel_id, DUEL_PATTERN
 
@@ -249,7 +249,6 @@ async def on_startup(app):
     init_duel_store()
     
     # 2. Проверяем реальное соединение (ping)
-    from duel_tools import rdb
     try:
         await rdb.ping()
         logger.info("✅ Redis ping успешен")
