@@ -25,7 +25,6 @@ user_flip_counts = {}
 
 
 def load_ad_links():
-    load_dotenv()
     i = 1
     link = os.environ.get("AD_LINK_{i}", "")
     while(len(link) > 0):

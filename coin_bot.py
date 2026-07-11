@@ -1,7 +1,7 @@
 import asyncio
 import os
 import sys
-import uuid
+
 import traceback
 
 import aiohttp
@@ -16,21 +16,28 @@ from aiogram.webhook.aiohttp_server import SimpleRequestHandler
 from dotenv import load_dotenv
 
 from quantum_rng1 import QuantumRNG
+
 from constants import (
     logger, START_TEXT, UNKNOWN_MSG_TEXT, FLIP_COIN_BTN_TEXT, COIN_SIDE,
     get_duel_url, get_cache_size_status_msg, duel_accept_answer_msg, get_duel_share_msg, qstatus_answer, get_flip_answer_msg, get_duel_answer_msg, NO_WEBHOOK_ERR_MSG, ad_text,
         get_callback_copy_duel_url,
-        copy_link_answer_msg, DUEL_PATTERN
+        copy_link_answer_msg, DUEL_PATTERN, duel_not_accepted_msg, duel_completed_msg, 
 )
+
 from ad_tools import POOL_SIZE, TRESHOLD, load_ad_links, calc_user_flip_coins, get_link, show_ad
+
+from duel_store import init_duel_store, save_duel_creator, get_duel_creator, delete_duel, if_duel_exists
+
+from duel_constants import generate_duel_id, DUEL_PATTERN
 
 # ─────────────────── Конфиг ───────────────────
 print("=" * 50, flush=True)
 print("🚀 БОТ ЗАПУСКАЕТСЯ", flush=True)
 print("=" * 50, flush=True)
 
-#load_dotenv()
+load_dotenv()
 load_ad_links()
+init_duel_store()
 
 TOKEN = os.environ.get("TG_BOT_TOKEN", "")
 BOT_USERNAME = os.environ.get("BOT_USERNAME", "")
@@ -85,16 +92,36 @@ async def accept_duel(message: types.Message):
     # Извлекаем группы из совпадения
     match = DUEL_PATTERN.match(message.text)
     if not match:
-        await message.answer("❌ Неверная ссылка на спор.")
+        await message.answer(duel_wrong_link_msg)
         return
         
     duel_id = match.group(1)
     bit = await qrng.get_shared_bit(duel_id)
     duel_answer_msg = get_duel_answer_msg(bit, duel_id)
     
+    # ✅ Отправляем результат принимающему (Пользователь Б)
     await message.answer(duel_answer_msg,
        parse_mode="HTML"
     )
+    
+    # ✅ Отправляем результат создателю (Пользователь А)
+    creator_chat_id = await get_duel_creator(duel_id)
+    if creator_chat_id:
+        try:
+            duel_complete_msg = get_duel_complete_msg(bit)
+            await bot.send_message(
+                chat_id=creator_chat_id,
+                text=duel_complete_msg,
+                parse_mode="HTML"
+            )
+            logger.info(f"Уведомление отправлено создателю {creator_chat_id}")
+        except Exception as e:
+            logger.warning(f"Не удалось уведомить создателя {creator_chat_id}: {e}")
+
+        # Удаляем запись о споре — он завершён
+        await delete_duel(duel_id)
+    else:
+        logger.warning(f"Создатель спора {duel_id} не найден в Redis")
 
 
 @dp.message(Command("start"))
@@ -159,10 +186,25 @@ async def copy_duel_link(callback: CallbackQuery):
     await callback.answer(copy_link_answer_msg)
 
 
+@dp.callback_query(F.data.startswith("check_duel:"))
+async def check_duel_status(callback: CallbackQuery):
+    
+    duel_id = callback.data.split(":")[1]
+    exists = if_duel_exists(duel_id)
+
+    if exists:
+        await callback.answer(duel_not_accepted_msg, show_alert=True)
+    else:
+        await callback.answer(duel_completed_msg, show_alert=True)
+
+
 @dp.message(Command("duel"))
 async def create_duel(message: types.Message):
     """Создание квантового спора с нативным выбором чата"""
-    duel_id = uuid.uuid4().hex[:8]
+    duel_id = generate_duel_id()
+    
+    # 💾 Сохраняем chat_id создателя
+    await save_duel_creator(duel_id, message.chat.id)
     
     # Текст, который автоматически подставится в поле ввода при выборе чата
     
@@ -178,6 +220,10 @@ async def create_duel(message: types.Message):
         [InlineKeyboardButton(
             text="📋 Скопировать ссылку",
             callback_data=f"copy_duel:{duel_id}"  # ← callback вместо url
+        )],
+        [InlineKeyboardButton(
+            text="🔄 Статус спора",
+            callback_data=f"check_duel:{duel_id}"
         )]
     ])
     
@@ -201,7 +247,7 @@ async def health_check(request: web.Request):
 async def setup_webhook():
     """Устанавливаем webhook после запуска сервера."""
     try:
-        # Проверяем текущий webhook
+        # Проверяем текущий w0ebhook
         info = await bot.get_webhook_info()
         if info.url != WEBHOOK_URL:
             print(f"⚠️ Webhook не совпадает: {info.url} != {WEBHOOK_URL}", flush=True)

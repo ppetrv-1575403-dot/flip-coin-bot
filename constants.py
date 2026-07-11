@@ -1,9 +1,12 @@
 import logging
-import re
-from aiogram import F
-from aiogram.filters import CommandObject
 
-DUEL_PATTERN = re.compile(r"^/start duel_([a-f0-9]{8})$")
+# ─────────────────── Логирование ───────────────────
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger(__name__)
+
 
 # ─────────────────── Константы ───────────────────
 
@@ -30,14 +33,6 @@ FLIP_COIN_BTN_TEXT = "🪙 Подбросить монету"
 
 
 COIN_SIDE = ["Орёл 🦅", "Решка 🪙"]
-
-
-# ─────────────────── Логирование ───────────────────
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-)
-logger = logging.getLogger(__name__)
 
 
 def get_cache_size_status_msg(bits_cache_size, refill_threshold):
@@ -110,3 +105,18 @@ ad_text = (
     "Вы уже подбросили монетку 5 раз! Хотите удвоить свои шансы? "
     "Попробуйте новый сервис аналитики от наших партнеров."
 )
+
+duel_not_accepted_msg = "Друг ещё не принял вызов..."
+
+duel_completed_msg = "✅ Спор уже завершён! Проверь сообщения выше."
+
+duel_wrong_link_msg = "❌ Неверная ссылка на спор."
+
+def get_duel_complete_msg(bit):
+    result = COIN_SIDE[bit]
+    return (
+        f"⚔️ <b>Твой квантовый спор завершён!</b>\n\n"
+        f"Друг принял вызов.\n"
+        f"Результат общего измерения: <b>{result}</b>"
+        )
+  
