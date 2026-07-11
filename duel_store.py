@@ -7,30 +7,29 @@ from constants import logger
 
 from dotenv import load_dotenv
 
-# Глобальная переменная соединения (безопасная инициализация)
-rdb: redis.Redis | None = None
-
 
 def init_duel_store():
-    #load_dotenv()
-    """
-    Инициализация подключения к Redis.
-    Должна быть вызвана при старте бота (on_startup).
-    """
     global rdb
     
     redis_url = os.getenv("REDIS_URL", REDIS_DEF_URL)
+    
+    # Диагностика URL
+    logger.info(f"🔍 REDIS_URL: {redis_url[:20]}...{redis_url[-20:] if len(redis_url) > 40 else ''}")
+    logger.info(f"🔍 Длина: {len(redis_url)}, SSL: {redis_url.startswith('rediss://')}, Internal: {'internal' in redis_url}")
     
     try:
         rdb = redis.from_url(
             redis_url, 
             encoding="utf-8", 
-            decode_responses=True
+            decode_responses=True,
+            socket_connect_timeout=10,
+            retry_on_timeout=True,
+            ssl=redis_url.startswith("rediss://")
         )
-        logger.info(f"✅ Redis подключён: {redis_url[:30]}...")
+        logger.info("✅ Redis клиент создан")
     except Exception as e:
-        logger.error(f"❌ Ошибка подключения к Redis: {e}", exc_info=True)
-        raise RuntimeError(f"Не удалось подключиться к Redis: {e}")
+        logger.error(f"❌ Ошибка создания клиента: {e}", exc_info=True)
+        raise RuntimeError(f"Не удалось создать Redis клиент: {e}")
 
 
 async def _get_rdb() -> redis.Redis:
