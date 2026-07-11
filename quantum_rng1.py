@@ -7,7 +7,7 @@ import aiohttp
 import secrets
 import hashlib
 
-logger = logging.getLogger(__name__)
+from constants import logger
 
 ANU_API_URL = "https://qrng.anu.edu.au/API/jsonI.php"
 

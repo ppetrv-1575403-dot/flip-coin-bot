@@ -244,6 +244,24 @@ async def health_check(request: web.Request):
     return web.Response(text="OK", status=200)
 
 
+async def on_startup(app):
+    # 1. Сначала подключаем Redis
+    init_duel_store()
+    
+    # 2. Проверяем реальное соединение (ping)
+    from duel_tools import rdb
+    try:
+        await rdb.ping()
+        logger.info("✅ Redis ping успешен")
+    except Exception as e:
+        logger.error(f"❌ Redis ping провален: {e}")
+        raise  # Не запускаем бота без Redis
+
+
+async def on_shutdown(app: web.Application):
+    """Вызывается при остановке сервера"""
+
+
 async def setup_webhook():
     """Устанавливаем webhook после запуска сервера."""
     try:
@@ -277,6 +295,9 @@ async def main():
     # Создаём приложение
     app = web.Application()
     app.router.add_get("/", health_check)
+    
+    app.on_startup.append(on_startup)
+    app.on_shutdown.append(on_shutdown)
     
     request_handler = SimpleRequestHandler(dispatcher=dp, bot=bot)
     request_handler.register(app, path=WEBHOOK_PATH)
