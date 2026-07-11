@@ -5,12 +5,14 @@ from duel_tools import REDIS_DEF_URL, DUEL_TTL
 
 from constants import logger
 
+from dotenv import load_dotenv
 
 # Глобальная переменная соединения (безопасная инициализация)
 rdb: redis.Redis | None = None
 
 
 def init_duel_store():
+    load_dotenv()
     """
     Инициализация подключения к Redis.
     Должна быть вызвана при старте бота (on_startup).
