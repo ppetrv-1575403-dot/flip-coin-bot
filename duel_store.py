@@ -12,7 +12,7 @@ rdb: redis.Redis | None = None
 
 
 def init_duel_store():
-    load_dotenv()
+    #load_dotenv()
     """
     Инициализация подключения к Redis.
     Должна быть вызвана при старте бота (on_startup).
