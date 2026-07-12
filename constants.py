@@ -124,7 +124,7 @@ duel_select_user_msg = "⚔️ Выбрать друга в Telegram"
 
 duel_copy_link_msg = "📋 Скопировать ссылку"
 
-duel_status_msg="🔄 Статус спора",
+duel_status_msg="🔄 Статус спора"
 
 send_duel_settlement_msg = "⚔️ Отправить приглашение на квантовую дуэль"
 
