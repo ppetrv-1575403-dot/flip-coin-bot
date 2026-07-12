@@ -19,9 +19,7 @@ from quantum_rng1 import QuantumRNG
 
 from constants import (
     logger, START_TEXT, UNKNOWN_MSG_TEXT, FLIP_COIN_BTN_TEXT, COIN_SIDE,
-    get_duel_url, get_cache_size_status_msg, duel_accept_answer_msg, get_duel_share_msg, qstatus_answer, get_flip_answer_msg, get_duel_answer_msg, NO_WEBHOOK_ERR_MSG, ad_text,
-        get_callback_copy_duel_url,
-        copy_link_answer_msg, duel_not_accepted_msg, duel_completed_msg, get_duel_complete_msg
+    get_duel_url, get_cache_size_status_msg, duel_accept_answer_msg, get_duel_share_msg, qstatus_answer, get_flip_answer_msg, get_duel_answer_msg, NO_WEBHOOK_ERR_MSG, ad_text, get_callback_copy_duel_url, copy_link_answer_msg, duel_not_accepted_msg, duel_completed_msg, get_duel_complete_msg
 )
 
 from ad_tools import POOL_SIZE, TRESHOLD, load_ad_links, calc_user_flip_coins, get_link, show_ad
@@ -213,6 +211,9 @@ async def create_duel(message: types.Message):
     duel_url = get_duel_url(BOT_USERNAME, duel_id)
     
     share_text = get_duel_share_msg(duel_url)
+    logger.info("ТГ юзер, сообщение для спора:\n
+    {share_text}")
+
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(
