@@ -12,6 +12,7 @@ from aiogram.types import (
     ReplyKeyboardMarkup, KeyboardButton,
     InlineKeyboardMarkup, InlineKeyboardButton
 )
+from aiogram.types import InlineQuery, InlineQueryResultArticle, InputTextMessageContent
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler
 from dotenv import load_dotenv
 
@@ -19,7 +20,7 @@ from quantum_rng1 import QuantumRNG
 
 from constants import (
     logger, START_TEXT, UNKNOWN_MSG_TEXT, FLIP_COIN_BTN_TEXT, COIN_SIDE,
-    get_duel_url, get_cache_size_status_msg, duel_accept_answer_msg, get_duel_share_msg, qstatus_answer, get_flip_answer_msg, get_duel_answer_msg, NO_WEBHOOK_ERR_MSG, ad_text, get_callback_copy_duel_url, copy_link_answer_msg, duel_not_accepted_msg, duel_completed_msg, get_duel_complete_msg
+    get_duel_url, get_cache_size_status_msg, duel_accept_answer_msg, get_duel_share_msg, qstatus_answer, get_flip_answer_msg, get_duel_answer_msg, NO_WEBHOOK_ERR_MSG, ad_text, get_callback_copy_duel_url, copy_link_answer_msg, duel_not_accepted_msg, duel_completed_msg, get_duel_complete_msg, send_duel_settlement_msg, press_to_send_msg 
 )
 
 from ad_tools import POOL_SIZE, TRESHOLD, load_ad_links, calc_user_flip_coins, get_link, show_ad
@@ -28,7 +29,7 @@ import duel_store
 
 from duel_store import init_duel_store, save_duel_creator, get_duel_creator, delete_duel, if_duel_exists, rdb
 
-from duel_tools import generate_duel_id, DUEL_PATTERN
+from duel_tools import generate_duel_id, DUEL_PATTERN, is_bot_url_match
 
 # ─────────────────── Конфиг ───────────────────
 print("=" * 50, flush=True)
@@ -215,22 +216,58 @@ async def create_duel(message: types.Message):
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(
-            text="⚔️ Выбрать друга в Telegram", switch_inline_query_current_chat=share_text  # ← Ключевой параметр
+            text=duel_select_user_msg, switch_inline_query=share_text  # ← Ключевой параметр
         )],
         [InlineKeyboardButton(
-            text="📋 Скопировать ссылку",
+            text=duel_copy_link_msg,
             callback_data=f"copy_duel:{duel_id}"  # ← callback вместо url
         )],
         [InlineKeyboardButton(
-            text="🔄 Статус спора",
+            text=duel_status_msg,
             callback_data=f"check_duel:{duel_id}"
         )]
+
     ])
-    
+
     await message.answer(duel_accept_answer_msg,
         parse_mode="HTML",
         reply_markup=keyboard
     )
+
+
+@dp.inline_query()
+async def handle_inline_duel(inline_query: InlineQuery):
+    """
+    Обрабатывает инлайн-запрос от switch_inline_query.
+    Возвращает статью с ссылкой на дуэль, чтобы разблокировать кнопку отправки.
+    """
+    query_text = inline_query.query.strip()
+    
+    # Проверяем, что это запрос на дуэль (содержит ссылку)
+    if "start=duel_" in query_text:
+        # Извлекаем URL из текста запроса
+        # Telegram подставил: "@bot ⚔️ Квантовый спор! ... https://t.me/..."
+        url_match = is_bot_url_match(query_text)
+
+        if url_match:
+            duel_url = url_match.group(0)
+            
+            result = InlineQueryResultArticle(
+                id="duel_share",
+                title=send_duel_settlement_msg, 
+                description=press_to_send_msg,
+                input_message_content=InputTextMessageContent(
+                    message_text=query_text,  # Отправляем исходный текст как есть
+                    parse_mode=None
+                ),
+                url=duel_url  # Ссылка кликабельна в превью
+            )
+            
+            await inline_query.answer([result], cache_time=1)
+            return
+    
+    # Для всех остальных запросов — пустой ответ
+    await inline_query.answer([], cache_time=1)
 
 
 @dp.message()

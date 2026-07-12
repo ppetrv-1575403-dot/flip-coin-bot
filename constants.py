@@ -119,4 +119,14 @@ def get_duel_complete_msg(bit):
         f"Друг принял вызов.\n"
         f"Результат общего измерения: <b>{result}</b>"
         )
-  
+ 
+duel_select_user_msg = "⚔️ Выбрать друга в Telegram"
+
+duel_copy_link_msg = "📋 Скопировать ссылку"
+
+duel_status_msg="🔄 Статус спора",
+
+send_duel_settlement_msg = "⚔️ Отправить приглашение на квантовую дуэль"
+
+press_to_send_msg = "Нажми, чтобы отправить другу"
+ 
