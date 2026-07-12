@@ -211,13 +211,11 @@ async def create_duel(message: types.Message):
     duel_url = get_duel_url(BOT_USERNAME, duel_id)
     
     share_text = get_duel_share_msg(duel_url)
-    logger.info(f"ТГ юзер, сообщение для спора:\n {share_text}")
-
+    #logger.info(f"ТГ юзер, сообщение для спора:\n {share_text}")
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(
-            text="⚔️ Выбрать друга в Telegram",
-            switch_inline_query=share_text  # ← Ключевой параметр
+            text="⚔️ Выбрать друга в Telegram", switch_inline_query_current_chat=share_text  # ← Ключевой параметр
         )],
         [InlineKeyboardButton(
             text="📋 Скопировать ссылку",
