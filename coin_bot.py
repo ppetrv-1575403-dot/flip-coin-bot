@@ -237,36 +237,39 @@ async def create_duel(message: types.Message):
 
 @dp.inline_query()
 async def handle_inline_duel(inline_query: InlineQuery):
-    """
-    Обрабатывает инлайн-запрос от switch_inline_query.
-    Возвращает статью с ссылкой на дуэль, чтобы разблокировать кнопку отправки.
-    """
     query_text = inline_query.query.strip()
-    logger.info(f"inline_query:\n {inline_query}")
-    # Проверяем, что это запрос на дуэль (содержит ссылку)
+    logger.info(f"📨 Inline query received: {repr(query_text)}")
+    
     if "start=duel_" in query_text:
-        # Извлекаем URL из текста запроса
-        # Telegram подставил: "@bot ⚔️ Квантовый спор! ... https://t.me/..."
         url_match = is_bot_url_match(query_text)
-
+        
         if url_match:
             duel_url = url_match.group(0)
             
+            # Убираем @username из начала текста для чистого отображения
+            clean_text = query_text
+            if clean_text.startswith("@"):
+                # Удаляем "@botname " из начала
+                parts = clean_text.split(" ", 1)
+                if len(parts) > 1 and parts[0].startswith("@"):
+                    clean_text = parts[1]
+            
             result = InlineQueryResultArticle(
                 id="duel_share",
-                title=send_duel_settlement_msg, 
+                title=send_duel_settlement_msg,
                 description=press_to_send_msg,
                 input_message_content=InputTextMessageContent(
-                    message_text=query_text,  # Отправляем исходный текст как есть
-                    parse_mode=None
+                    message_text=clean_text,
+                    parse_mode="HTML"  # ← HTML, чтобы ссылки были кликабельными
                 ),
-                url=duel_url  # Ссылка кликабельна в превью
+                url=duel_url,
+                hide_url=False  # ← Показываем ссылку в превью
             )
             
             await inline_query.answer([result], cache_time=1)
             return
     
-    # Для всех остальных запросов — пустой ответ
+    # Пустой ответ для нерелевантных запросов
     await inline_query.answer([], cache_time=1)
 
 
@@ -309,7 +312,7 @@ async def setup_webhook():
         print(f"🔄 Установка webhook на {WEBHOOK_URL}...", flush=True)
         result = await bot.set_webhook(
             url=WEBHOOK_URL,
-            allowed_updates=["message", "callback_query"],
+            allowed_updates=["message", "callback_query", "inline_query"],
             drop_pending_updates=True,
         )
         print(f"✅ Webhook установлен: {result}", flush=True)
