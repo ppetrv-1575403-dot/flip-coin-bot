@@ -211,8 +211,7 @@ async def create_duel(message: types.Message):
     duel_url = get_duel_url(BOT_USERNAME, duel_id)
     
     share_text = get_duel_share_msg(duel_url)
-    logger.info("ТГ юзер, сообщение для спора:\n
-    {share_text}")
+    logger.info(f"ТГ юзер, сообщение для спора:\n {share_text}")
 
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
