@@ -242,7 +242,7 @@ async def handle_inline_duel(inline_query: InlineQuery):
     Возвращает статью с ссылкой на дуэль, чтобы разблокировать кнопку отправки.
     """
     query_text = inline_query.query.strip()
-    
+    logger.info(f"inline_query:\n {inline_query}")
     # Проверяем, что это запрос на дуэль (содержит ссылку)
     if "start=duel_" in query_text:
         # Извлекаем URL из текста запроса
