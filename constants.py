@@ -38,7 +38,7 @@ DAILY_BTN_TEXT = "🔮 Прогноз на день"
 DUEL_BTN_TEXT = "⚔️ Квантовый спор"
 
 
-COIN_SIDE = ["Орёл 🦅", "Решка 🪙"]
+COIN_SIDE = ["Решка 🪙", "Орёл 🦅"]
 
 
 def get_cache_size_status_msg(bits_cache_size, refill_threshold):
