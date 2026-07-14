@@ -20,14 +20,12 @@ from datetime import datetime, timezone, timedelta
 
 from quantum_rng1 import QuantumRNG
 
-from constants import (
-    logger, START_TEXT, UNKNOWN_MSG_TEXT, FLIP_COIN_BTN_TEXT, COIN_SIDE,
-    get_duel_url, get_cache_size_status_msg, duel_accept_answer_msg, get_duel_share_msg, qstatus_answer, get_flip_answer_msg, get_duel_answer_msg, NO_WEBHOOK_ERR_MSG, ad_text, get_callback_copy_duel_url, copy_link_answer_msg, duel_not_accepted_msg, duel_completed_msg, get_duel_complete_msg, send_duel_settlement_msg, press_to_send_msg, duel_select_user_msg, duel_copy_link_msg, duel_status_msg
+from constants import (logger, START_TEXT, UNKNOWN_MSG_TEXT, FLIP_COIN_BTN_TEXT, COIN_SIDE, get_duel_url, get_cache_size_status_msg, duel_accept_answer_msg, get_duel_share_msg, qstatus_answer, get_flip_answer_msg, get_duel_answer_msg, NO_WEBHOOK_ERR_MSG, ad_text, get_callback_copy_duel_url, copy_link_answer_msg, duel_not_accepted_msg, duel_completed_msg, get_duel_complete_msg, send_duel_settlement_msg, press_to_send_msg, duel_select_user_msg, duel_copy_link_msg, duel_status_msg
 )
 
 from ad_tools import POOL_SIZE, TRESHOLD, load_ad_links, calc_user_flip_coins, get_link, show_ad
 
-import duel_store 
+import db_store 
 
 from db_store import init_duel_store, save_duel_creator, get_duel_creator, delete_duel, if_duel_exists, rdb, get_daily_result, save_daily_result
 
@@ -40,7 +38,6 @@ print("=" * 50, flush=True)
 
 load_dotenv() 
 load_ad_links()
-#init_duel_store()
 
 TOKEN = os.environ.get("TG_BOT_TOKEN", "")
 BOT_USERNAME = os.environ.get("BOT_USERNAME", "")
@@ -317,11 +314,11 @@ async def health_check(request: web.Request):
 
 async def on_startup(app):
     # 1. Сначала подключаем Redis
-    init_duel_store()
+    init_store()
     
     # 2. Проверяем реальное соединение (ping)
     try:
-        await duel_store.rdb.ping()
+        await db_store.rdb.ping()
         logger.info("✅ Redis ping успешен")
     except Exception as e:
         logger.error(f"❌ Redis ping провален: {e}")
