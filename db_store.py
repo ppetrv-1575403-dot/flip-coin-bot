@@ -3,6 +3,8 @@ import redis.asyncio as redis
 
 from duel_tools import REDIS_DEF_URL, DUEL_TTL
 
+from daily_tools import DAILY_TTL
+
 from constants import logger
 
 from dotenv import load_dotenv

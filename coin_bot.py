@@ -16,6 +16,8 @@ from aiogram.types import InlineQuery, InlineQueryResultArticle, InputTextMessag
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler
 from dotenv import load_dotenv
 
+from datetime import datetime, timezone, timedelta
+
 from quantum_rng1 import QuantumRNG
 
 from constants import (
@@ -27,7 +29,7 @@ from ad_tools import POOL_SIZE, TRESHOLD, load_ad_links, calc_user_flip_coins, g
 
 import duel_store 
 
-from duel_store import init_duel_store, save_duel_creator, get_duel_creator, delete_duel, if_duel_exists, rdb
+from db_store import init_duel_store, save_duel_creator, get_duel_creator, delete_duel, if_duel_exists, rdb, get_daily_result, save_daily_result
 
 from duel_tools import generate_duel_id, DUEL_PATTERN, is_bot_url_match
 
@@ -80,12 +82,104 @@ qrng = QuantumRNG(pool_size=POOL_SIZE, refill_threshold=TRESHOLD)
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
+
 keyboard = ReplyKeyboardMarkup(
-    keyboard=[[KeyboardButton(text=FLIP_COIN_BTN_TEXT)]],
+    keyboard=[
+        [KeyboardButton(text=FLIP_COIN_BTN_TEXT)],
+        [KeyboardButton(text=DAILY_BTN_TEXT), 
+        KeyboardButton(text=DUEL_BTN_TEXT)]
+    ],
     resize_keyboard=True,
 )
 
+
 # ═══════════════════════ Хэндлеры ═══════════════════════
+
+
+@dp.message(F.text.in_([FLIP_COIN_BTN_TEXT, "/flip"]))
+async def flip_coin(message: types.Message):
+    try:
+        user_id = message.from_user.id
+        
+        if COIN_ANIMATION_ID and len(COIN_ANIMATION_ID) > 10:
+            try:
+                anim_msg = await message.answer_animation(
+                    animation=COIN_ANIMATION_ID,
+                    caption="Монетка подброшена...",
+                )
+                await asyncio.sleep(2)
+                await anim_msg.delete()
+            except Exception as e:
+                logger.warning(f"Ошибка анимации: {e}")
+        
+        bit = await qrng.get_bit()
+        flip_answer = get_flip_answer_msg(bit)
+        logger.info(f"Результат flip: {flip_answer}")
+        
+        await message.answer(flip_answer, parse_mode="HTML", reply_markup=keyboard)
+        await show_ad(user_id, message)
+    except Exception as e:
+        logger.error(f"Ошибка в flip_coin: {e}", exc_info=True)
+        await message.answer("⚠️ Произошла ошибка. Попробуй позже.")
+
+
+@dp.message(F.text.in_([DUEL_BTN_TEXT, "/duel"]))
+async def create_duel(message: types.Message):
+    """Создание квантового спора с нативным выбором чата"""
+    duel_id = generate_duel_id()
+    
+    # 💾 Сохраняем chat_id создателя
+    await save_duel_creator(duel_id, message.chat.id)
+    
+    # Текст, который автоматически подставится в поле ввода при выборе чата
+    
+    duel_url = get_duel_url(BOT_USERNAME, duel_id)
+    
+    share_text = get_duel_share_msg(duel_url)
+    #logger.info(f"ТГ юзер, сообщение для спора:\n {share_text}")
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(
+            text=duel_select_user_msg, switch_inline_query=share_text  # ← Ключевой параметр
+        )],
+        [InlineKeyboardButton(
+            text=duel_copy_link_msg,
+            callback_data=f"copy_duel:{duel_id}"  # ← callback вместо url
+        )],
+        [InlineKeyboardButton(
+            text=duel_status_msg,
+            callback_data=f"check_duel:{duel_id}"
+        )]
+
+    ])
+
+    await message.answer(duel_accept_answer_msg,
+        parse_mode="HTML",
+        reply_markup=keyboard
+    )
+
+
+@dp.message(F.text.in_([DAILY_BTN_TEXT, "/daily"]))
+async def daily_forecast(message: types.Message):
+
+    user_id = message.from_user.id
+    
+    # 1. Проверяем, есть ли уже результат на сегодня
+    cached = await get_daily_result(user_id)
+    if cached:
+        await message.answer(cached, parse_mode="HTML")
+        return
+    
+    # 2. Генерируем новый результат
+    bit = await qrng.get_bit()
+    prediction = get_daily_prediction_text(user_id, bit)
+    
+    # 3. Сохраняем в Redis
+    await save_daily_result(user_id, prediction)
+    
+    # 4. Отправляем
+    await message.answer(prediction, parse_mode="HTML")
+
 
 @dp.message(F.text.regexp(DUEL_PATTERN))
 async def accept_duel(message: types.Message):
@@ -125,40 +219,13 @@ async def accept_duel(message: types.Message):
         logger.warning(f"Создатель спора {duel_id} не найден в Redis")
 
 
-@dp.message(Command("start"))
+dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     try:
         await message.answer(START_TEXT, reply_markup=keyboard, parse_mode="HTML")
         logger.info("Отправлено приветствие")
     except Exception as e:
         logger.error(f"Ошибка в cmd_start: {e}", exc_info=True)
-
-
-@dp.message(F.text.in_([FLIP_COIN_BTN_TEXT, "/flip"]))
-async def flip_coin(message: types.Message):
-    try:
-        user_id = message.from_user.id
-        
-        if COIN_ANIMATION_ID and len(COIN_ANIMATION_ID) > 10:
-            try:
-                anim_msg = await message.answer_animation(
-                    animation=COIN_ANIMATION_ID,
-                    caption="Монетка подброшена...",
-                )
-                await asyncio.sleep(2)
-                await anim_msg.delete()
-            except Exception as e:
-                logger.warning(f"Ошибка анимации: {e}")
-        
-        bit = await qrng.get_bit()
-        flip_answer = get_flip_answer_msg(bit)
-        logger.info(f"Результат flip: {flip_answer}")
-        
-        await message.answer(flip_answer, parse_mode="HTML", reply_markup=keyboard)
-        await show_ad(user_id, message)
-    except Exception as e:
-        logger.error(f"Ошибка в flip_coin: {e}", exc_info=True)
-        await message.answer("⚠️ Произошла ошибка. Попробуй позже.")
 
 
 @dp.message(Command("qstatus"))
@@ -197,42 +264,6 @@ async def check_duel_status(callback: CallbackQuery):
         await callback.answer(duel_not_accepted_msg, show_alert=True)
     else:
         await callback.answer(duel_completed_msg, show_alert=True)
-
-
-@dp.message(Command("duel"))
-async def create_duel(message: types.Message):
-    """Создание квантового спора с нативным выбором чата"""
-    duel_id = generate_duel_id()
-    
-    # 💾 Сохраняем chat_id создателя
-    await save_duel_creator(duel_id, message.chat.id)
-    
-    # Текст, который автоматически подставится в поле ввода при выборе чата
-    
-    duel_url = get_duel_url(BOT_USERNAME, duel_id)
-    
-    share_text = get_duel_share_msg(duel_url)
-    #logger.info(f"ТГ юзер, сообщение для спора:\n {share_text}")
-
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(
-            text=duel_select_user_msg, switch_inline_query=share_text  # ← Ключевой параметр
-        )],
-        [InlineKeyboardButton(
-            text=duel_copy_link_msg,
-            callback_data=f"copy_duel:{duel_id}"  # ← callback вместо url
-        )],
-        [InlineKeyboardButton(
-            text=duel_status_msg,
-            callback_data=f"check_duel:{duel_id}"
-        )]
-
-    ])
-
-    await message.answer(duel_accept_answer_msg,
-        parse_mode="HTML",
-        reply_markup=keyboard
-    )
 
 
 @dp.inline_query()
