@@ -19,13 +19,13 @@ def init_store():
 
     # Upstash требует SSL. Если URL начинается с redis://, заменяем на rediss://
     if "upstash.io" in redis_url and not redis_url.startswith("rediss://"):
-    redis_url = redis_url.replace("redis://", "rediss://", 1)
-    logger.info("🔒 Upstash detected: switched to rediss:// (SSL)")
+        redis_url = redis_url.replace("redis://", "rediss://", 1)
+        logger.info("🔒 Upstash detected: switched to rediss:// (SSL)")
 
-    logger.info(f"🔍 REDIS_URL: {
-        redis_url[:20]}... {
-        redis_url[-20:] if len(redis_url) > 40 else ''
-    }")
+        logger.info(f"🔍 REDIS_URL: {
+            redis_url[:20]}... {
+            redis_url[-20:] if len(redis_url) > 40 else ''
+        }")
 
     try:
         # В Redis 8.x SSL параметры лучше передавать через ssl_cert_reqs
