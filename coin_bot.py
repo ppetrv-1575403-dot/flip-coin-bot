@@ -20,7 +20,7 @@ from datetime import datetime, timezone, timedelta
 
 from quantum_rng1 import QuantumRNG
 
-from constants import (logger, START_TEXT, UNKNOWN_MSG_TEXT, FLIP_COIN_BTN_TEXT, DAILY_BTN_TEXT, DUEL_BTN_TEXT, COIN_SIDE, get_duel_url, get_cache_size_status_msg, duel_accept_answer_msg, get_duel_share_msg, qstatus_answer, get_flip_answer_msg, get_duel_answer_msg, NO_WEBHOOK_ERR_MSG, ad_text, get_callback_copy_duel_url, copy_link_answer_msg, duel_not_accepted_msg, duel_completed_msg, get_duel_complete_msg, send_duel_settlement_msg, press_to_send_msg, duel_select_user_msg, duel_copy_link_msg, duel_status_msg
+from constants import (logger, START_TEXT, UNKNOWN_MSG_TEXT, FLIP_COIN_BTN_TEXT, DAILY_BTN_TEXT, DUEL_BTN_TEXT, COIN_SIDE, get_duel_url, get_cache_size_status_msg, duel_accept_answer_msg, get_duel_share_msg, qstatus_answer, get_flip_answer_msg, get_duel_answer_msg, NO_WEBHOOK_ERR_MSG, ad_text, get_callback_copy_duel_url, copy_link_answer_msg, duel_not_accepted_msg, duel_completed_msg, get_duel_complete_msg, send_duel_settlement_msg, press_to_send_msg, duel_select_user_msg, duel_copy_link_msg, duel_status_msg, get_daily_prediction_text
 )
 
 from ad_tools import POOL_SIZE, TRESHOLD, load_ad_links, calc_user_flip_coins, get_link, show_ad
@@ -91,6 +91,52 @@ keyboard = ReplyKeyboardMarkup(
 
 
 # ═══════════════════════ Хэндлеры ═══════════════════════
+
+@dp.message(F.text.regexp(DUEL_PATTERN))
+async def accept_duel(message: types.Message):
+    
+    # Извлекаем группы из совпадения
+    match = DUEL_PATTERN.match(message.text)
+    if not match:
+        await message.answer(duel_wrong_link_msg)
+        return
+        
+    duel_id = match.group(1)
+    bit = await qrng.get_shared_bit(duel_id)
+    duel_answer_msg = get_duel_answer_msg(bit, duel_id)
+    
+    # ✅ Отправляем результат принимающему (Пользователь Б)
+    await message.answer(duel_answer_msg,
+       parse_mode="HTML"
+    )
+    
+    # ✅ Отправляем результат создателю (Пользователь А)
+    creator_chat_id = await get_duel_creator(duel_id)
+    if creator_chat_id:
+        try:
+            duel_complete_msg = get_duel_complete_msg(bit)
+            await bot.send_message(
+                chat_id=creator_chat_id,
+                text=duel_complete_msg,
+                parse_mode="HTML"
+            )
+            logger.info(f"Уведомление отправлено создателю {creator_chat_id}")
+        except Exception as e:
+            logger.warning(f"Не удалось уведомить создателя {creator_chat_id}: {e}")
+
+        # Удаляем запись о споре — он завершён
+        await delete_duel(duel_id)
+    else:
+        logger.warning(f"Создатель спора {duel_id} не найден в Redis")
+
+
+dp.message(Command("start"))
+async def cmd_start(message: types.Message):
+    try:
+        await message.answer(START_TEXT, reply_markup=keyboard, parse_mode="HTML")
+        logger.info("Отправлено приветствие")
+    except Exception as e:
+        logger.error(f"Ошибка в cmd_start: {e}", exc_info=True)
 
 
 @dp.message(F.text.in_([FLIP_COIN_BTN_TEXT, "/flip"]))
@@ -176,53 +222,6 @@ async def daily_forecast(message: types.Message):
     
     # 4. Отправляем
     await message.answer(prediction, parse_mode="HTML")
-
-
-@dp.message(F.text.regexp(DUEL_PATTERN))
-async def accept_duel(message: types.Message):
-    
-    # Извлекаем группы из совпадения
-    match = DUEL_PATTERN.match(message.text)
-    if not match:
-        await message.answer(duel_wrong_link_msg)
-        return
-        
-    duel_id = match.group(1)
-    bit = await qrng.get_shared_bit(duel_id)
-    duel_answer_msg = get_duel_answer_msg(bit, duel_id)
-    
-    # ✅ Отправляем результат принимающему (Пользователь Б)
-    await message.answer(duel_answer_msg,
-       parse_mode="HTML"
-    )
-    
-    # ✅ Отправляем результат создателю (Пользователь А)
-    creator_chat_id = await get_duel_creator(duel_id)
-    if creator_chat_id:
-        try:
-            duel_complete_msg = get_duel_complete_msg(bit)
-            await bot.send_message(
-                chat_id=creator_chat_id,
-                text=duel_complete_msg,
-                parse_mode="HTML"
-            )
-            logger.info(f"Уведомление отправлено создателю {creator_chat_id}")
-        except Exception as e:
-            logger.warning(f"Не удалось уведомить создателя {creator_chat_id}: {e}")
-
-        # Удаляем запись о споре — он завершён
-        await delete_duel(duel_id)
-    else:
-        logger.warning(f"Создатель спора {duel_id} не найден в Redis")
-
-
-dp.message(Command("start"))
-async def cmd_start(message: types.Message):
-    try:
-        await message.answer(START_TEXT, reply_markup=keyboard, parse_mode="HTML")
-        logger.info("Отправлено приветствие")
-    except Exception as e:
-        logger.error(f"Ошибка в cmd_start: {e}", exc_info=True)
 
 
 @dp.message(Command("qstatus"))
