@@ -27,7 +27,7 @@ from ad_tools import POOL_SIZE, TRESHOLD, load_ad_links, calc_user_flip_coins, g
 
 import db_store 
 
-from db_store import init_duel_store, save_duel_creator, get_duel_creator, delete_duel, if_duel_exists, rdb, get_daily_result, save_daily_result
+from db_store import init_store, save_duel_creator, get_duel_creator, delete_duel, if_duel_exists, rdb, get_daily_result, save_daily_result
 
 from duel_tools import generate_duel_id, DUEL_PATTERN, is_bot_url_match
 
