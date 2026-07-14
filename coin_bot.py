@@ -130,7 +130,7 @@ async def accept_duel(message: types.Message):
         logger.warning(f"Создатель спора {duel_id} не найден в Redis")
 
 
-dp.message(Command("start"))
+@dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     try:
         await message.answer(START_TEXT, reply_markup=keyboard, parse_mode="HTML")
