@@ -38,9 +38,9 @@ def init_store():
             retry_on_timeout = True,
             ssl_cert_reqs = None # ← Ключевое исправление для Redis 8.x + Upstash
         )
-            logger.info("✅ Redis клиент создан")
-        except Exception as e:
-            logger.error(f"❌ Ошибка создания клиента: {e}", exc_info = True)
+        logger.info("✅ Redis клиент создан")
+    except Exception as e:
+        logger.error(f"❌ Ошибка создания клиента: {e}", exc_info = True)
         raise RuntimeError(f"Не удалось создать Redis клиент: {e}")
 
 async def _get_rdb() -> redis.Redis:
