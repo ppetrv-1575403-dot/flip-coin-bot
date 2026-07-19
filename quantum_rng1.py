@@ -7,13 +7,14 @@ import aiohttp
 import secrets
 import hashlib
 
-logger = logging.getLogger(__name__)
+from constants import logger
 
 ANU_API_URL = "https://qrng.anu.edu.au/API/jsonI.php"
 
 BITS_SIZE = 1024
 POOL_SIZE = 500
 REFIL_TRSLD = 100
+NET_STTUS_OK = 200
 
 class QuantumRNG:
     """
@@ -71,7 +72,7 @@ class QuantumRNG:
 
             params = {"length": str(request_size), "type": "uint8"}
             async with self._session.get(ANU_API_URL, params=params, timeout=aiohttp.ClientTimeout(total=10)) as resp:
-                if resp.status != 200:
+                if resp.status != NET_STTUS_OK:
                     raise RuntimeError(f"API вернул статус {resp.status}")
                 data = await resp.json()
 
@@ -93,21 +94,21 @@ class QuantumRNG:
             self._is_refilling = False
             
             
-async def get_shared_bit(self, duel_id: str) -> int:
-    """
-    Получить квантовый бит для совместного спора.
-    Один и тот же duel_id всегда возвращает один и тот же бит.
-    """
-    # Детерминированный маппинг duel_id → индекс в пулеm1
-    # Это гарантирует, что оба участника получат одинаковый результат
-    hash_val = int(hashlib.sha256(duel_id.encode()).hexdigest(), 16)
+    async def get_shared_bit(self, duel_id: str) -> int:
+        """
+        Получить квантовый бит для совместного спора.
+        Один и тот же duel_id всегда возвращает один и тот же бит.
+        """
+        # Детерминированный маппинг duel_id → индекс в пулеm1
+        # Это гарантирует, что оба участника получат одинаковый результат
+        hash_val = int(hashlib.sha256(duel_id.encode()).hexdigest(), 16)
     
-    async with self._lock:
-        if not self._pool:
-            return secrets.randbelow(2)
+        async with self._lock:
+            if not self._pool:
+                return secrets.randbelow(2)
         
-        index = hash_val % len(self._pool)
-        bit = self._pool[index]
-        # НЕ удаляем бит из пула (popleft), чтобы второй участник получил тот же
+            index = hash_val % len(self._pool)
+            bit = self._pool[index]
+            # НЕ удаляем бит из пула (popleft), чтобы второй участник получил тот же
         
-    return bit
+        return bit
