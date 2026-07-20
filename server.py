@@ -22,7 +22,9 @@ def build_app(
     logger: logging.Logger,
 ) -> web.Application:
     app = web.Application()
+    
     app.router.add_get("/", health_check)
+    app.router.add_head("/", health_check)
 
     async def on_startup(_app: web.Application) -> None:
         await redis_client.connect()
@@ -56,7 +58,11 @@ async def setup_webhook(bot: Bot, settings: Settings, logger: logging.Logger) ->
         logger.info(f"🔄 Установка webhook на {settings.full_webhook_url}...")
         result = await bot.set_webhook(
             url=settings.full_webhook_url,
-            allowed_updates=["message", "callback_query", "inline_query"],
+            allowed_updates=[
+                "message", 
+                "callback_query", "inline_query"
+                
+            ],
             drop_pending_updates=True,
         )
         logger.info(f"✅ Webhook установлен: {result}")
