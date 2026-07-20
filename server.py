@@ -24,7 +24,7 @@ def build_app(
     app = web.Application()
     
     app.router.add_get("/", health_check)
-    app.router.add_head("/", health_check)
+    #app.router.add_head("/", health_check)
 
     async def on_startup(_app: web.Application) -> None:
         await redis_client.connect()
