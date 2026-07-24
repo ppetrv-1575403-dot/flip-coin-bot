@@ -1,4 +1,4 @@
-from aiogram import Router, types, BotCommand
+from aiogram import Router, types
 from aiogram.filters import Command
 
 from common.keyboards import main_keyboard
