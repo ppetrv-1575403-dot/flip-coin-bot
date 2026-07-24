@@ -1,4 +1,4 @@
-from aiogram import Router, types
+from aiogram import Router, types, BotCommand
 from aiogram.filters import Command
 
 from common.keyboards import main_keyboard
@@ -7,7 +7,6 @@ from common.texts import START_TEXT, UNKNOWN_MSG_TEXT
 # Этот роутер подключается ПОСЛЕДНИМ в bot.py — его catch-all хендлер
 # должен ловить только то, что не подошло ни одной фиче.
 router = Router(name="core")
-
 
 @router.message(Command("start"))
 async def cmd_start(message: types.Message, logger):
