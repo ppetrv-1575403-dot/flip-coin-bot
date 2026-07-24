@@ -11,6 +11,7 @@ from infra.redis_client import RedisClient
 from infra.rng import QuantumRNG
 from logging_setup import setup_logging
 from server import build_app, setup_webhook
+from bot_menu import set_commands
 
 WEBAPP_HOST = "0.0.0.0"
 
@@ -39,6 +40,8 @@ async def main() -> None:
 
     dp = await build_dispatcher(settings, redis_client, qrng, logger)
 
+    await set_commands(bot)
+
     try:
         await qrng.start()
         logger.info("✅ QRNG инициализирован")
@@ -46,6 +49,8 @@ async def main() -> None:
         logger.warning(f"⚠️ QRNG не инициализирован: {e}")
 
     app = build_app(bot, dp, settings, redis_client, qrng, logger)
+
+    await set_commands(bot)
 
     runner = web.AppRunner(app)
     await runner.setup()
