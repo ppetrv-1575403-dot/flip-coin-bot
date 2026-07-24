@@ -1,7 +1,5 @@
 import logging
-
-from aiogram import Dispatcher, BotCommand
-
+from aiogram import Dispatcher
 from config import Settings
 from features.ads.service import AdService
 from features.core.handlers import router as core_router
@@ -33,8 +31,6 @@ async def build_dispatcher(
     синглтонов и ручного протаскивания зависимостей через импорты.
     """
     dp = Dispatcher()
-
-    await set_commands(bot)
     
     duel_repo = DuelRepository(redis_client, DUEL_TTL)
     daily_repo = DailyRepository(redis_client, DAILY_TTL)
@@ -61,12 +57,3 @@ async def build_dispatcher(
     return dp
 
 
-async def set_commands(bot: Bot):
-    commands = [
-        BotCommand(command="start", description="Запуск бота и знакомство"),
-        BotCommand(command="daily", description="Квантовое предсказание на день"),
-        BotCommand(command="flip", description="Честное подбрасывание монетки ⚛️"),
-        BotCommand(command="vote", description="Создать голосование в чате"),
-        BotCommand(command="who", description="Случайный выбор участника группы")
-    ]
-    await bot.set_my_commands(commands)
