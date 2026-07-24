@@ -1,13 +1,13 @@
 import logging
-
 import redis.asyncio as redis
 
 
 class RedisClient:
     """Тонкая обёртка над соединением Redis: только жизненный цикл, без бизнес-логики."""
 
-    def __init__(self, redis_url: str, logger: logging.Logger):
+    def __init__(self, redis_url: str, logger: logging.Logger, use_ssl: bool = False):
         self._logger = logger
+        self._use_ssl = use_ssl
         self._redis_url = self._normalize_url(redis_url)
         self._conn: redis.Redis | None = None
 
@@ -19,14 +19,23 @@ class RedisClient:
         return redis_url
 
     async def connect(self) -> None:
-        self._conn = redis.from_url(
-            self._redis_url,
-            encoding="utf-8",
-            decode_responses=True,
-            socket_connect_timeout=10,
-            retry_on_timeout=True,
-            ssl_cert_reqs=None,  # нужно для Redis 8.x + Upstash
-        )
+        # Общие параметры для ЛЮБОГО подключения (локального и прода)
+        kwargs = {
+            "encoding": "utf-8",
+            "decode_responses": True,
+            "socket_connect_timeout": 10,
+            "retry_on_timeout": True,
+        }
+
+        # SSL-специфичные параметры добавляем только если нужно
+        if self._use_ssl:
+            kwargs["ssl_cert_reqs"] = None 
+            
+        self._logger.info(f"Подключение к Redis (SSL: {self._use_ssl})...")
+        
+        self._conn = redis.from_url(self._redis_url, **kwargs)
+
+        # Проверка соединения
         await self._conn.ping()
         self._logger.info("✅ Redis подключён")
 

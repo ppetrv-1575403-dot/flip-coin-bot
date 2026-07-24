@@ -14,6 +14,7 @@ class Settings:
     webhook_path: str
     port: int
     redis_url: str
+    redis_use_ssl:bool
     coin_animation_id: str
     qrng_pool_size: int
     qrng_refill_threshold: int
@@ -49,6 +50,8 @@ def load_settings() -> Settings:
             "Не задан WEBHOOK_URL и не найдена RENDER_EXTERNAL_URL. "
             "Укажи URL вручную в переменных окружения."
         )
+    
+    use_ssl = os.getenv("REDIS_USE_SSL", "true").lower() == "true"
 
     return Settings(
         bot_token=token,
@@ -57,6 +60,7 @@ def load_settings() -> Settings:
         webhook_path="/webhook",
         port=int(os.environ.get("PORT", 8080)),
         redis_url=os.environ.get("REDIS_URL", "redis://localhost:6379"),
+        redis_use_ssl=use_ssl,
         coin_animation_id=os.environ.get("COIN_ANIMATION_ID", ""),
         qrng_pool_size=int(os.environ.get("QRNG_POOL_SIZE", 500)),
         qrng_refill_threshold=int(os.environ.get("QRNG_REFILL_THRESHOLD", 100)),
