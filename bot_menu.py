@@ -11,7 +11,7 @@ who_command_description="Случайный выбор участника гру
 async def set_commands(bot: Bot):
     commands = [
         BotCommand(command="start", description=start_command_description),
-        BotCommand(command="daily", description=flip_command_description),
+        BotCommand(command="daily", description=daily_command_description),
         BotCommand(command="flip", description=flip_command_description),
         BotCommand(command="vote", description=vote_command_description),
         BotCommand(command="who", description=who_command_description)

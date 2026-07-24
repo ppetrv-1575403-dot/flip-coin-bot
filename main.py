@@ -40,8 +40,6 @@ async def main() -> None:
 
     dp = await build_dispatcher(settings, redis_client, qrng, logger)
 
-    await set_commands(bot)
-
     try:
         await qrng.start()
         logger.info("✅ QRNG инициализирован")
