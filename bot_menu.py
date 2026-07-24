@@ -1,5 +1,5 @@
 from aiogram import Bot 
-from aiogram.types import BotCommand
+from aiogram.types import BotCommand, BotCommandScopeDefault
 
 start_command_description="Запуск бота и знакомство"
 daily_command_description="Квантовое предсказание на день"
@@ -10,7 +10,7 @@ who_command_description="Случайный выбор участника гру
 
 async def set_commands(bot: Bot):
     commands = [
-        BotCommand(command="start", description=start_command_description),
+        BotCommand(command="start", description=start_command_description, scope=BotCommandScopeDefault()),
         BotCommand(command="daily", description=daily_command_description),
         BotCommand(command="flip", description=flip_command_description),
         BotCommand(command="vote", description=vote_command_description),
