@@ -33,10 +33,11 @@ async def main() -> None:
     logger.info(f"✅ PORT = {settings.port}")
 
     bot = Bot(token=settings.bot_token)
+    
     redis_client = RedisClient(settings.redis_url, logger)
     qrng = QuantumRNG(pool_size=settings.qrng_pool_size, refill_threshold=settings.qrng_refill_threshold)
 
-    dp = build_dispatcher(settings, redis_client, qrng, logger)
+    dp = await build_dispatcher(settings, redis_client, qrng, logger)
 
     try:
         await qrng.start()

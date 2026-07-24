@@ -1,6 +1,6 @@
 import logging
 
-from aiogram import Dispatcher
+from aiogram import Dispatcher, BotCommand
 
 from config import Settings
 from features.ads.service import AdService
@@ -20,7 +20,7 @@ from repositories.flip_repo import FlipCounterRepository
 from repositories.vote_repo import VoteRepository
 
 
-def build_dispatcher(
+async def build_dispatcher(
     settings: Settings,
     redis_client: RedisClient,
     qrng: QuantumRNG,
@@ -34,6 +34,8 @@ def build_dispatcher(
     """
     dp = Dispatcher()
 
+    await set_commands(bot)
+    
     duel_repo = DuelRepository(redis_client, DUEL_TTL)
     daily_repo = DailyRepository(redis_client, DAILY_TTL)
     vote_repo = VoteRepository(redis_client, VOTE_TTL)
@@ -57,3 +59,14 @@ def build_dispatcher(
     dp.include_router(core_router)
 
     return dp
+
+
+async def set_commands(bot: Bot):
+    commands = [
+        BotCommand(command="start", description="Запуск бота и знакомство"),
+        BotCommand(command="daily", description="Квантовое предсказание на день"),
+        BotCommand(command="flip", description="Честное подбрасывание монетки ⚛️"),
+        BotCommand(command="vote", description="Создать голосование в чате"),
+        BotCommand(command="who", description="Случайный выбор участника группы")
+    ]
+    await bot.set_my_commands(commands)
