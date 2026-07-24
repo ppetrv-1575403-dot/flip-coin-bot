@@ -1,4 +1,5 @@
-from aiogram import Bot, BotCommand
+from aiogram import Bot 
+from aiogram.types import BotCommand
 
 start_command_description="Запуск бота и знакомство"
 daily_command_description="Квантовое предсказание на день"
