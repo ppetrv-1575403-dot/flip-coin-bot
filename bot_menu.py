@@ -1,19 +1,20 @@
-from aiogram import Bot 
-from aiogram.types import BotCommand, BotCommandScopeDefault
+from aiogram import Bot
+from aiogram.types import BotCommand
 
-start_command_description="Запуск бота и знакомство"
-daily_command_description="Квантовое предсказание на день"
-flip_command_description="Честное подбрасывание монетки ⚛️"
-vote_command_description="Создать голосование в чате"
-who_command_description="Случайный выбор участника группы"
-
+start_command_description = "Запуск бота и знакомство"
+daily_command_description = "Квантовое предсказание на день" # <-- Исправлено здесь
+flip_command_description = "Честное подбрасывание монетки ⚛️"
+vote_command_description = "Создать голосование в чате"
+who_command_description = "Случайный выбор участника группы"
+help_command_description = "Справка и квантовая механика 📜" # <-- Добавлено
 
 async def set_commands(bot: Bot):
     commands = [
-        BotCommand(command="start", description=start_command_description, scope=BotCommandScopeDefault()),
-        BotCommand(command="daily", description=daily_command_description),
+        BotCommand(command="start", description=start_command_description),
         BotCommand(command="flip", description=flip_command_description),
-        BotCommand(command="vote", description=vote_command_description),
-        BotCommand(command="who", description=who_command_description)
+        BotCommand(command="daily", description=daily_command_description),
+      BotCommand(command="vote", description=vote_command_description),
+        BotCommand(command="who", description=who_command_description),
+        BotCommand(command="help", description=help_command_description)
     ]
     await bot.set_my_commands(commands)

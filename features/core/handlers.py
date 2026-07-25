@@ -1,8 +1,7 @@
 from aiogram import Router, types
 from aiogram.filters import Command
-
 from common.keyboards import main_keyboard
-from common.texts import START_TEXT, UNKNOWN_MSG_TEXT
+from common.texts import START_TEXT, HELP_TEXT, UNKNOWN_MSG_TEXT
 
 # Этот роутер подключается ПОСЛЕДНИМ в bot.py — его catch-all хендлер
 # должен ловить только то, что не подошло ни одной фиче.
@@ -16,6 +15,13 @@ async def cmd_start(message: types.Message, logger):
     except Exception as e:
         logger.error(f"Ошибка в cmd_start: {e}", exc_info=True)
 
+@router.message(Command("help"))
+async def cmd_help(message: types.Message, logger):
+    try:
+        await message.answer(HELP_TEXT, reply_markup=main_keyboard, parse_mode="HTML")
+        logger.info("Отправлена справка /help")
+    except Exception as e:
+        logger.error(f"Ошибка в cmd_help: {e}", exc_info=True)
 
 @router.message()
 async def unknown_message(message: types.Message, logger):
