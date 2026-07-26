@@ -1,31 +1,33 @@
 from collections import Counter
 
 from infra.rng import QuantumRNG
+from .schemas import VoteResult
 
-VOTE_TTL = 86400  # Голосование живёт 24 часа
-MAX_OPTIONS = 5
+LOW_VOTES_THRESHOLD = 3  # порог предупреждения о малом числе голосов
 
+VOTE_TTL = 3600  # Голосование живёт 5 минут
 
-async def calculate_vote_results(vote_data: dict, qrng: QuantumRNG) -> tuple[list[int], bool]:
+async def calculate_quantum_results(
+    vote_data: dict,
+    qrng: QuantumRNG,
+) -> VoteResult:
     """
-    Подсчитывает голоса. При ничьей использует квантовый RNG для выбора победителя.
-    Возвращает: (список индексов победителей, был_ли_тайбрейкер)
+    Определяет победителя через взвешенную квантовую случайность.
+    Вероятности пропорциональны голосам.
     """
     votes = vote_data.get("votes", {})
-
-    if not votes:
-        return [], False
+    options = vote_data.get("options", [])
 
     counter = Counter(votes.values())
-    max_count = max(counter.values())
-    winners = [idx for idx, count in counter.items() if count == max_count]
+    weights = [counter.get(idx, 0) for idx in range(len(options))]
+    total = sum(weights)
 
-    if len(winners) == 1:
-        return winners, False
+    # Квантовый выбор (при нулевых весах — равномерно случайно)
+    winner_idx = await qrng.weighted_choice(weights)
 
-    # Ничья! Используем квантовый тайбрейкер
-    bits_needed = (len(winners) - 1).bit_length()
-    bit_str = "".join(str(await qrng.get_bit()) for _ in range(bits_needed))
-    chosen = int(bit_str, 2) % len(winners)
-
-    return [winners[chosen]], True
+    # Вероятности в процентах
+    if total > 0:
+        probabilities = [round(w / total * 100, 1) for w in weights]
+    else:
+        uniform = round(100 / len(options), 1) if options else 0.0
+        probabilities = [uniform for _ in options]

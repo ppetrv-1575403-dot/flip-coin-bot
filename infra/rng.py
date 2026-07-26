@@ -39,14 +39,17 @@ class QuantumRNG:
     def refill_threshold(self) -> int:
         return self._refill_threshold
 
+
     async def start(self) -> None:
         self._session = aiohttp.ClientSession()
         await self._refill_pool()
         logger.info(f"[ANU QRNG] Пул инициализирован. Доступно битов: {len(self._pool)}")
 
+
     async def close(self) -> None:
         if self._session and not self._session.closed:
             await self._session.close()
+
 
     async def get_bit(self) -> int:
         """Получить квантово-случайный бит с автоматическим фоновым пополнением."""
@@ -58,6 +61,7 @@ class QuantumRNG:
                 logger.warning("[ANU QRNG] Пул пуст! Fallback на secrets...")
                 return secrets.randbelow(2)
             return self._pool.popleft()
+
 
     async def get_shared_bit(self, duel_id: str) -> int:
         """
@@ -109,3 +113,44 @@ class QuantumRNG:
             logger.error(f"[ANU QRNG] Ошибка: {e}", exc_info=True)
         finally:
             self._is_refilling = False
+
+
+    async def get_random_below(self, n: int) -> int:
+        """
+        Квантово-случайное число в диапазоне [0, n).
+        Использует rejection sampling на битах из пула.
+        """
+        if n <= 0:
+            raise ValueError("n must be positive")
+        if n == 1:
+            return 0
+
+        bits_needed = (n - 1).bit_length()
+
+        while True:
+            bit_str = "".join(
+                str(await self.get_bit()) for _ in range(bits_needed)
+            )
+            value = int(bit_str, 2)
+            if value < n:
+                return value
+            # Rejection sampling: если value >= n, пробуем снова
+
+
+    async def weighted_choice(self, weights: list[int]) -> int:
+        """
+        Выбор индекса с вероятностями, пропорциональными весам.
+        Например, weights=[7, 3] → индекс 0 с вероятностью 70%, индекс 1 с 30%.
+        """
+        total = sum(weights)
+        if total <= 0:
+            raise ValueError("Sum of weights must be positive")
+
+        r = await self.get_random_below(total)
+        cumulative = 0
+        for idx, w in enumerate(weights):
+            cumulative += w
+            if r < cumulative:
+                return idx
+
+        return len(weights) - 1  # fallback на случай ошибок округления

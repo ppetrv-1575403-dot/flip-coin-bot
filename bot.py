@@ -34,7 +34,7 @@ async def build_dispatcher(
     
     duel_repo = DuelRepository(redis_client, DUEL_TTL)
     daily_repo = DailyRepository(redis_client, DAILY_TTL)
-    vote_repo = VoteRepository(redis_client, VOTE_TTL)
+    vote_repo = VoteRepository(redis_client)
     flip_repo = FlipCounterRepository(redis_client)
     ad_service = AdService(settings.ad_links, flip_repo, logger)
 
@@ -43,6 +43,7 @@ async def build_dispatcher(
     dp["daily_repo"] = daily_repo
     dp["vote_repo"] = vote_repo
     dp["ad_service"] = ad_service
+    
     dp["bot_username"] = settings.bot_username
     dp["coin_animation_id"] = settings.coin_animation_id
     dp["logger"] = logger
@@ -53,7 +54,5 @@ async def build_dispatcher(
     dp.include_router(daily_router)
     dp.include_router(vote_router)
     dp.include_router(core_router)
-
+    
     return dp
-
-
