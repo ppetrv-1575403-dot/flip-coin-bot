@@ -26,7 +26,7 @@ class VoteResult:
     """Запрос на результат голосования."""
     winner_idx: int
     weights: list[int]
-    probabilities: list[int]
+    probabilities: list[float]
     total_votes: int
     is_low_votes: bool = False
 
