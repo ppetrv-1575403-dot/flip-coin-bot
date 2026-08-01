@@ -16,8 +16,9 @@ from .texts import (
     who_result_text,
 )
 
-router = Router(name="who")
+from common.telegram_utils import is_message_from_group
 
+router = Router(name="who")
 
 @router.message(Command("who"))
 async def cmd_who(
@@ -29,7 +30,7 @@ async def cmd_who(
 ):
     try:
         # Только для групп
-        if message.chat.type not in ("group", "supergroup"):
+        if not is_message_from_group(message):
             await message.answer(who_not_group_text())
             return
 
