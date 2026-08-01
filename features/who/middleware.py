@@ -12,6 +12,8 @@ from aiogram.types import Message, TelegramObject
 
 from repositories.who_repo import WhoRepository
 
+CHAT_GROUP = "group"
+CHAT_SUPER_GROUP = "supergroup"
 
 class TrackMembersMiddleware(BaseMiddleware):
     """Записывает user_id отправителя в Redis для групповых чатов."""
@@ -25,7 +27,10 @@ class TrackMembersMiddleware(BaseMiddleware):
         event: TelegramObject,
         data: dict[str, Any],
     ) -> Any:
-        if isinstance(event, Message) and event.chat.type in ("group", "supergroup"):
+        if isinstance(event, Message) and event.chat.type in (
+                CHAT_GROUP, 
+                CHAT_SUPER_GROUP
+            ):
             if event.from_user and not event.from_user.is_bot:
                 await self._who_repo.add_member(event.chat.id, event.from_user.id)
 

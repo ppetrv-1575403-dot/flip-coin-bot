@@ -9,6 +9,7 @@ from features.duel.handlers import router as duel_router
 from features.duel.service import DUEL_TTL
 from features.flip.handlers import router as flip_router
 from features.vote.handlers import router as vote_router
+from features.who.handlers import router as who_router
 from features.vote.service import VOTE_TTL
 from infra.redis_client import RedisClient
 from infra.rng import QuantumRNG
@@ -60,6 +61,7 @@ async def build_dispatcher(
     dp.include_router(duel_router)
     dp.include_router(daily_router)
     dp.include_router(vote_router)
+    dp.include_router(who_router)
     dp.include_router(core_router)
     
     return dp
